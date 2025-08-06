@@ -29,3 +29,5 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 });
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/sidlan.php';
+require __DIR__ . '/geomapping.php';
