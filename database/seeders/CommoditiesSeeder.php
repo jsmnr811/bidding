@@ -17,7 +17,7 @@ class CommoditiesSeeder extends Seeder
             ['name' => 'Mango', 'icon' => 'icons/mango.png'],
             ['name' => 'Sweet Potato', 'icon' => 'icons/sweet-potato.png'],
             ['name' => 'Tilapia', 'icon' => 'icons/tilapia.png'],
-            ['name' => 'Dairy', 'icon' => 'icons/milk.png'],
+            ['name' => 'Dairy', 'icon' => 'icons/dairy.png'],
             ['name' => 'Goat', 'icon' => 'icons/goat.png'],
             ['name' => 'Organic garlic', 'icon' => 'icons/garlic.png'],
             ['name' => 'Banana', 'icon' => 'icons/banana.png'],
