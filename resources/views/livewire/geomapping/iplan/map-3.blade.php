@@ -20,12 +20,14 @@ new class extends Component {
     public $temporaryForDeletion = [];
     public $selectedInterventions = [];
     public $selectedCommodity = null;
+    public $selectedFilterCommoditites = [];
 
     public function mount(): void
     {
         $this->commodities = Commodity::orderBy('name', 'asc')->get();
         $this->interventions = Intervention::orderBy('name', 'asc')->get();
         $this->provinceGeo = GeoCommodity::where('province_id', 1)->with('commodity', 'geoInterventions.intervention')->get()->toArray();
+        $this->selectedFilterCommoditites = $this->commodities->pluck('id')->toArray();
     }
 
     public function search(): void
@@ -58,6 +60,28 @@ new class extends Component {
         if ($value) {
             $this->selectedCommodity = $value;
         }
+    }
+
+    public function updatedSelectedFilterCommoditites()
+    {
+
+        // Keep only provinceGeo items with commodity_id in selectedFilterCommoditites
+        $this->provinceGeo = array_values(
+            array_filter($this->provinceGeo, function ($item) {
+                return in_array($item['commodity_id'], $this->selectedFilterCommoditites);
+            }),
+        );
+
+        // Keep only temporaryGeo items with commodity_id in selectedFilterCommoditites
+        $this->temporaryGeo = array_values(
+            array_filter($this->temporaryGeo, function ($item) {
+                return in_array($item['commodity_id'], $this->selectedFilterCommoditites);
+            }),
+        );
+
+
+        $this->dispatch('temporaryGeoUpdated', $this->temporaryGeo);
+        $this->dispatch('provinceGeoUpdated', $this->provinceGeo);
     }
 
     public function addTempCommodity()
@@ -158,146 +182,200 @@ new class extends Component {
 
         LivewireAlert::title('Updated!')->text('The commodities entries have been updated.')->success()->toast()->position('top-end')->show();
     }
+
+    //if auto:
+    // public function updatedSelectedCommodity($value)
+    // {
+    //     $this->addTempCommodity();
+    // }
+    // public function updatedselectedInterventions()
+    // {
+    //     $this->addTempCommodity();
+    // }
+    // public function addTempCommodity()
+    // {
+    //     $this->validate([
+    //         'selectedCommodity' => 'required',
+    //         'lat' => 'required',
+    //         'lon' => 'required',
+    //         'selectedInterventions' => 'required',
+    //     ]);
+
+    //     $commodity = Commodity::find($this->selectedCommodity);
+    //     $interventions = Intervention::whereIn('id', $this->selectedInterventions)->get();
+
+    //     if (!$commodity) {
+    //         return; // Or throw an error if you want
+    //     }
+
+    //     // Prepare new entry data
+    //     $newEntry = [
+    //         'commodity_id' => $this->selectedCommodity,
+    //         'latitude' => $this->lat,
+    //         'longitude' => $this->lon,
+    //         'commodity' => [
+    //             'id' => $commodity->id,
+    //             'name' => $commodity->name,
+    //             'icon' => $commodity->icon,
+    //         ],
+    //         'geo_interventions' => $interventions
+    //             ->map(function ($intervention) {
+    //                 return [
+    //                     'intervention_id' => $intervention->id,
+    //                     'intervention' => [
+    //                         'id' => $intervention->id,
+    //                         'name' => $intervention->name,
+    //                         'created_at' => $intervention->created_at,
+    //                         'updated_at' => $intervention->updated_at,
+    //                     ],
+    //                 ];
+    //             })
+    //             ->toArray(),
+    //     ];
+
+    //     // Check if entry with same commodity and lat/lon exists
+    //     $updated = false;
+    //     foreach ($this->temporaryGeo as $index => $entry) {
+    //         if ($entry['commodity_id'] === $this->selectedCommodity && $entry['latitude'] === $this->lat && $entry['longitude'] === $this->lon) {
+    //             // Update existing entry
+    //             $this->temporaryGeo[$index] = $newEntry;
+    //             $updated = true;
+    //             break;
+    //         }
+    //     }
+
+    //     // If no existing entry found, add new
+    //     if (!$updated) {
+    //         $this->temporaryGeo[] = $newEntry;
+    //     }
+
+    //     $this->dispatch('temporaryGeoUpdated', $this->temporaryGeo);
+    //     $this->dispatch('removeMarkers');
+    //     $this->dispatch('resetDropDown');
+
+    //     $this->selectedCommodity = null;
+    //     $this->selectedInterventions = [];
+    // }
 };
 ?>
-<section class="section-padding ">
-    <div class="container">
-        <h2 class="mb-10 text-center">Pin Your Farm, Optimize Your Yield</h2>
-        <div class="row justify-content-center" wire:ignore x-data="window.mapSearch(@js($provinceGeo), @js($temporaryGeo))" x-init="initMap()">
-            <div class="col-lg-10">
-                <!-- Location Input / Map Interaction -->
-                <div class="bg-white rounded-4 shadow-md p-4 mb-4">
-                    <h3 class="h4 mb-3">Select Your Location</h3>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control search-input" x-model="query"
-                            @input.debounce.500="onInput" autocomplete="off"
-                            placeholder="Enter location (e.g., city, region) or click on the map..."
-                            aria-label="Location search input">
-                        <button class="btn search-button" type="button">Find</button>
-                    </div>
-                    <p class="text-sm text-gray-500 mb-0">
-                        You can type a location above or **pin a precise spot directly on the map below.**
-                    </p>
-                    <div x-show="open && results.length" class="search-results border rounded bg-white mb-2"
-                        style="max-height: 200px; overflow-y: auto;">
-                        <template x-for="(res, idx) in results" :key="idx">
-                            <div @click="selectResult(res)" class="p-2 cursor-pointer border-bottom hover:bg-light"
-                                :title="res.display_name" style="cursor:pointer">
-                                <span x-text="res.display_name"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
+<div class="row g-4" wire:ignore x-data="window.mapSearch(@js($provinceGeo), @js($temporaryGeo))" x-init="initMap()">
+    <!-- Map and Location Section -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm p-4 h-100">
+            <h5 class="mb-3 fw-semibold">📍 Select Your Farm Location</h5>
+            <!-- Search Bar -->
+            <!-- Relative container to anchor the floating dropdown -->
+            <div class="position-relative mb-3">
+                <!-- Search Input -->
+                <input type="text" class="form-control form-control-lg" x-model="query" @input.debounce.500="onInput"
+                    autocomplete="off" id="location-search" placeholder="Search for a city, region..."
+                    aria-label="Location search">
 
-                <!-- Placeholder for your Map -->
-                <div class="card shadow-sm rounded-4 shadow-md  mb-4">
-
-                    <div class="card-body p-4">
-                        <div wire:ignore id="map"></div>
-                    </div>
-                </div>
-                <!-- Commodity and Interventions Selection -->
-                <div x-show="hasMarker" class="bg-white rounded-lg shadow-md p-4 mb-4">
-                    <h3 class="h4 mb-3">Input by Commodity & Intervention</h3>
-                    <div class="mb-4 p-3 border rounded bg-light">
-                        <h5 class="mb-3">📍 Location Information</h5>
-
-                        <div class="mb-3">
-                            <div class="d-flex align-items-start">
-                                <span class="fw-semibold text-dark me-2" style="min-width: 90px;">Location:</span>
-                                <span class="text-body text-break"
-                                    x-text="$wire.query ? $wire.query : 'No location selected'"></span>
-                            </div>
+                <!-- Floating Search Results -->
+                <div x-show="open && results.length"
+                    class="search-results position-absolute top-100 start-0 w-100 border rounded bg-white shadow-sm "
+                    style="max-height: 200px; overflow-y: auto; z-index:9999">
+                    <template x-for="(res, idx) in results" :key="idx">
+                        <div @click="selectResult(res)" class="p-2 cursor-pointer border-bottom hover:bg-light"
+                            :title="res.display_name" style="cursor:pointer">
+                            <span x-text="res.display_name"></span>
                         </div>
-
-                        <div class="row text-body">
-                            <div class="col-md-6 mb-2">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-semibold text-dark me-2" style="min-width: 90px;">Latitude:</span>
-                                    <span x-text="$wire.lat ? $wire.lat.toFixed(6) : '-'"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-semibold text-dark me-2" style="min-width: 90px;">Longitude:</span>
-                                    <span x-text="$wire.lon ? $wire.lon.toFixed(6) : '-'"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="commoditySelect" class="form-label font-weight-bold">Select Commodity:</label>
-                        <x-select2 name="commoditySelect" id="commoditySelect" class="search-input" :options="$commodities"
-                            wireModel='selectedCommodity'>
-                            @foreach ($commodities as $commodity)
-                                <option value="{{ $commodity->id }}"
-                                    {{ $commodity->id == $selectedCommodity ? 'selected' : '' }}>{{ $commodity->name }}
-                                </option>
-                            @endforeach
-                        </x-select2>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="interventionSelect" class="form-label font-weight-bold">Select
-                            Intervention:</label>
-                        <x-select2-multiple multi="true" name="interventionSelect" id="interventionSelect"
-                            class="search-input" wireModel='selectedInterventions'>
-                            @foreach ($interventions as $intervention)
-                                <option value="{{ $intervention->id }}"
-                                    {{ in_array($intervention->id, $selectedInterventions) ? 'selected' : '' }}>
-                                    {{ $intervention->name }}
-                                </option>
-                            @endforeach
-                        </x-select2-multiple>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="d-flex justify-content-end">
-                            <button class="btn btn-success " wire:click="addTempCommodity"><i
-                                    class="bi bi-plus-circle me-2"></i>Add Entry</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-4 shadow-md p-4 mb-4">
-                    <button class="btn search-button w-100" type="button" wire:click="saveUpdates">Save
-                        Updates</button>
-
-                    <p class="text-muted mt-3 mb-0" style="font-size: 0.9rem;">
-                        <strong>How to use this form:</strong><br>
-                        - Pin or search for a location on the map to activate the input form.<br>
-                        - Select the relevant agricultural commodity and one or more interventions.<br>
-                        - Click <strong>"Add Entry"</strong> to add the selection to the map.<br>
-                        - To remove an entry, click its pin on the map and then click the <strong>trash icon (<i
-                                class="bi bi-trash-fill text-danger"></i>)</strong>.<br>
-                        - <strong>Remember to click "Save Updates" to apply all changes.</strong>
-                    </p>
+                    </template>
                 </div>
             </div>
+
+            <!-- Map Display -->
+            <div id="map" class="rounded shadow-sm" style="height: 400px;"></div>
+            <div class="row text-body mt-2" x-show="hasMarker">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center" style="font-size: 9px;">
+                        <span class="fw-semibold text-dark me-2">Latitude:</span>
+                        <span x-text="$wire.lat ? $wire.lat.toFixed(6) : '-'"></span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <div class="d-flex align-items-center" style="font-size: 9px;">
+                        <span class="fw-semibold text-dark me-2">Longitude:</span>
+                        <span x-text="$wire.lon ? $wire.lon.toFixed(6) : '-'"></span>
+                    </div>
+                </div>
+            </div>
+            <small class="text-muted d-block mt-3">
+                Alternatively, simply click on the map to pin a precise location.
+            </small>
         </div>
     </div>
-</section>
+
+    <!-- Filter and Toggle Sidebar -->
+    <div class="col-lg-4 ">
+        <div class="card shadow-sm p-4 h-100">
+            <div :class="{ 'disable-controls': !hasMarker }" class=" mb-4">
+                <h5 class="mb-4 fw-semibold">🌾 Commodities & Interventions</h5>
+                <!-- Commodity Selection -->
+                <div class="mb-2">
+                    <label for="commoditySelect" class="form-label fw-bold"> Commodity</label>
+                    <x-select2 name="commoditySelect" id="commoditySelect" class="search-input" :options="$commodities"
+                        wireModel='selectedCommodity'>
+                        @foreach ($commodities as $commodity)
+                            <option value="{{ $commodity->id }}"
+                                {{ $commodity->id == $selectedCommodity ? 'selected' : '' }}>{{ $commodity->name }}
+                            </option>
+                        @endforeach
+                    </x-select2>
+                </div>
+
+                <!-- Intervention Selection -->
+                <div class="mb-2">
+                    <label for="interventionSelect" class="form-label fw-bold">Intervention</label>
+                    <x-select2-multiple multi="true" name="interventionSelect" id="interventionSelect"
+                        class="search-input" wireModel='selectedInterventions'>
+                        @foreach ($interventions as $intervention)
+                            <option value="{{ $intervention->id }}"
+                                {{ in_array($intervention->id, $selectedInterventions) ? 'selected' : '' }}>
+                                {{ $intervention->name }}
+                            </option>
+                        @endforeach
+                    </x-select2-multiple>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-secondary " wire:click="addTempCommodity"><i
+                                class="bi bi-plus-circle me-2"></i>Add Temporary Entry</button>
+                    </div>
+                </div>
+                <button class="btn btn-success w-100 py-2" wire:click="saveUpdates"><i class="bi bi-save me-2"></i>Save
+                    Changes</button>
+            </div>
+
+            <div class="mb-4">
+                <h5 class="fs-6 mb-3 fw-bold">🗺️ Toggle Map Layers</h5>
+                <div class="flex-grow-1 overflow-auto d-grid gap-3 shadow-sm rounded p-3"
+                    style="max-height: 220px; grid-template-columns: repeat(3, 1fr);">
+                    @foreach ($commodities as $commodity)
+                        <div class="form-check form-switch d-flex align-items-center ">
+                            <input class="form-check-input" type="checkbox" id="commodity-{{ $commodity->id }}"
+                                wire:model.live="selectedFilterCommoditites" value="{{ $commodity->id }}">
+                            <label class="form-check-label ms-2 d-flex align-items-center"
+                                for="commodity-{{ $commodity->id }}">
+                                <img class="marker-circle me-2" src="{{ asset('icons/' . $commodity->icon) }}"
+                                    onerror="this.onerror=null;this.src='{{ asset('icons/icons/default.png') }}';"
+                                    alt="{{ $commodity->name }}" width="30" height="30" data-bs-toggle="tooltip"
+                                    data-bs-placement="top" title="{{ $commodity->name }}">
+                            </label>
+                        </div>
+                    @endforeach
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
 @script
     <script>
-        $(document).ready(function() {
-            const select = $('#commodity-dropdown');
-            select.select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Select Commodity',
-                allowClear: true
-            });
-
-            // Listen to change and update Livewire manually
-            select.on('change', function(e) {
-                let selectedValue = $(this).val();
-                Livewire.dispatch('updateSelectedCommodity', {
-                    value: selectedValue
-                });
-            });
-            Livewire.on('resetDropDown', () => {
-                const select = $('#interventionSelect,#commoditySelect');
-                select.val(null).trigger('change');
-            });
-        });
-
         window.mapSearch = function(provinceGeo, temporaryGeo) {
             return {
                 query: '',
@@ -366,6 +444,11 @@ new class extends Component {
                         this.$wire.set('lon', lng);
                         this.reverseGeocode(lat, lng, true);
                     });
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll(
+                        '[data-bs-toggle="tooltip"]'))
+                    tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+                        new bootstrap.Tooltip(tooltipTriggerEl)
+                    })
                 },
 
                 addProvinceMarkers() {

@@ -14,4 +14,19 @@ class GeoCommodity extends Model
     {
         return $this->belongsTo(Commodity::class);
     }
+
+    public function geoInterventions()
+    {
+        return $this->hasMany(GeoIntervention::class);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($geoCommodity) {
+            // Delete all related interventions before deleting geoCommodity
+            $geoCommodity->geoInterventions()->delete();
+        });
+    }
 }

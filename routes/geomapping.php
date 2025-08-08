@@ -9,13 +9,9 @@ Route::name('geomapping.')->prefix('geomapping')->group(function () {
 
         // Route to handle the dashboard view for iReap
         // This route fetches data from the iReap API and passes it to the view
-        Route::get('dashboard', function (): View {
-            $apiService = new SidlanAPIServices();
-            $irZeroOneData = $apiService->executeRequest();
-            return view('geomapping.iplan.dashboard', [
-                'irZeroOneData' => $irZeroOneData,
-            ]);
-        })->name('dashboard');
+        Route::view('dashboard', 'geomapping.iplan.dashboard')->name('dashboard');
+        Route::view('dashboard-2', 'geomapping.iplan.dashboard-2')->name('dashboard-2');
+        Route::view('dashboard-3', 'geomapping.iplan.dashboard-3')->name('dashboard-3');
 
         //next route
 

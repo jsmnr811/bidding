@@ -3,7 +3,6 @@
 use App\Models\Commodity;
 use Livewire\Attributes\On;
 use App\Models\GeoCommodity;
-use App\Models\Intervention;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\Http;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
@@ -14,18 +13,16 @@ new class extends Component {
     public float $lat = 12.8797;
     public float $lon = 121.774;
     public $commodities = [];
-    public $interventions = [];
     public $provinceGeo = [];
     public $temporaryGeo = [];
     public $temporaryForDeletion = [];
-    public $selectedInterventions = [];
+    public $interventions = '';
     public $selectedCommodity = null;
 
     public function mount(): void
     {
         $this->commodities = Commodity::orderBy('name', 'asc')->get();
-        $this->interventions = Intervention::orderBy('name', 'asc')->get();
-        $this->provinceGeo = GeoCommodity::where('province_id', 1)->with('commodity', 'geoInterventions.intervention')->get()->toArray();
+        $this->provinceGeo = GeoCommodity::where('province_id', 1)->with('commodity')->get()->toArray();
     }
 
     public function search(): void
@@ -37,15 +34,12 @@ new class extends Component {
 
         $response = Http::withHeaders([
             'User-Agent' => 'I-REAP_BIDDING (mojicamarcallen@gmail.com)',
-            'Accept-Language' => 'en',
         ])->get('https://nominatim.openstreetmap.org/search', [
             'q' => $this->query,
             'format' => 'json',
             'addressdetails' => 1,
             'limit' => 5,
             'countrycodes' => 'ph',
-            'viewbox' => '116.931885,21.321780,126.604385,4.215806',
-            'bounded' => 1,
         ]);
 
         $data = $response->json();
@@ -66,35 +60,20 @@ new class extends Component {
             'selectedCommodity' => 'required',
             'lat' => 'required',
             'lon' => 'required',
-            'selectedInterventions' => 'required',
+            'interventions' => 'required',
         ]);
-
         $commodity = Commodity::find($this->selectedCommodity);
-        $interventions = Intervention::whereIn('id', $this->selectedInterventions)->get();
-
         if ($commodity) {
             $this->temporaryGeo[] = [
                 'commodity_id' => $this->selectedCommodity,
                 'latitude' => $this->lat,
                 'longitude' => $this->lon,
+                'interventions' => $this->interventions,
                 'commodity' => [
                     'id' => $commodity->id,
                     'name' => $commodity->name,
                     'icon' => $commodity->icon,
                 ],
-                'geo_interventions' => $interventions
-                    ->map(function ($intervention) {
-                        return [
-                            'intervention_id' => $intervention->id,
-                            'intervention' => [
-                                'id' => $intervention->id,
-                                'name' => $intervention->name,
-                                'created_at' => $intervention->created_at,
-                                'updated_at' => $intervention->updated_at,
-                            ],
-                        ];
-                    })
-                    ->toArray(),
             ];
 
             $this->dispatch('temporaryGeoUpdated', $this->temporaryGeo);
@@ -102,7 +81,7 @@ new class extends Component {
             $this->dispatch('resetDropDown');
 
             $this->selectedCommodity = null;
-            $this->selectedInterventions = [];
+            $this->interventions = '';
         }
     }
 
@@ -131,53 +110,39 @@ new class extends Component {
     public function saveUpdates()
     {
         foreach ($this->temporaryGeo as $geo) {
-            $geoCommodity = GeoCommodity::create([
+            GeoCommodity::create([
                 'commodity_id' => $geo['commodity_id'],
                 'latitude' => $geo['latitude'],
                 'longitude' => $geo['longitude'],
                 'province_id' => 1,
             ]);
-
-            if (!empty($geo['geo_interventions']) && is_array($geo['geo_interventions'])) {
-                foreach ($geo['geo_interventions'] as $interventionEntry) {
-                    $geoCommodity->geoInterventions()->create([
-                        'intervention_id' => $interventionEntry['intervention_id'],
-                    ]);
-                }
-            }
         }
-
-        foreach ($this->temporaryForDeletion as $id) {
-            GeoCommodity::find($id)?->delete(); // triggers deletion of related geo_interventions
+        foreach ($this->temporaryForDeletion as $key => $id) {
+            GeoCommodity::find($id)->delete();
         }
-
         $this->temporaryForDeletion = [];
         $this->temporaryGeo = [];
         $this->lat = 0;
         $this->lon = 0;
-
         LivewireAlert::title('Updated!')->text('The commodities entries have been updated.')->success()->toast()->position('top-end')->show();
     }
 };
 ?>
-<section class="section-padding ">
-    <div class="container">
-        <h2 class="mb-10 text-center">Pin Your Farm, Optimize Your Yield</h2>
-        <div class="row justify-content-center" wire:ignore x-data="window.mapSearch(@js($provinceGeo), @js($temporaryGeo))" x-init="initMap()">
-            <div class="col-lg-10">
-                <!-- Location Input / Map Interaction -->
-                <div class="bg-white rounded-4 shadow-md p-4 mb-4">
-                    <h3 class="h4 mb-3">Select Your Location</h3>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control search-input" x-model="query"
-                            @input.debounce.500="onInput" autocomplete="off"
-                            placeholder="Enter location (e.g., city, region) or click on the map..."
-                            aria-label="Location search input">
-                        <button class="btn search-button" type="button">Find</button>
-                    </div>
-                    <p class="text-sm text-gray-500 mb-0">
-                        You can type a location above or **pin a precise spot directly on the map below.**
-                    </p>
+<div class="row">
+    <!-- Left Sidebar -->
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white fw-bold">
+                Search Location
+            </div>
+            <div class="card-body">
+                <div wire:ignore x-data="window.mapSearch(@js($provinceGeo), @js($temporaryGeo))" x-init="initMap()">
+
+                    <!-- Search Input -->
+                    <input x-model="query" @input.debounce.500="onInput" type="text" class="form-control mb-2"
+                        placeholder="Search for a place in PH..." autocomplete="off">
+
+                    <!-- Dropdown Results -->
                     <div x-show="open && results.length" class="search-results border rounded bg-white mb-2"
                         style="max-height: 200px; overflow-y: auto;">
                         <template x-for="(res, idx) in results" :key="idx">
@@ -187,94 +152,61 @@ new class extends Component {
                             </div>
                         </template>
                     </div>
-                </div>
 
-                <!-- Placeholder for your Map -->
-                <div class="card shadow-sm rounded-4 shadow-md  mb-4">
-
-                    <div class="card-body p-4">
-                        <div wire:ignore id="map"></div>
-                    </div>
-                </div>
-                <!-- Commodity and Interventions Selection -->
-                <div x-show="hasMarker" class="bg-white rounded-lg shadow-md p-4 mb-4">
-                    <h3 class="h4 mb-3">Input by Commodity & Intervention</h3>
-                    <div class="mb-4 p-3 border rounded bg-light">
-                        <h5 class="mb-3">📍 Location Information</h5>
-
-                        <div class="mb-3">
-                            <div class="d-flex align-items-start">
-                                <span class="fw-semibold text-dark me-2" style="min-width: 90px;">Location:</span>
-                                <span class="text-body text-break"
-                                    x-text="$wire.query ? $wire.query : 'No location selected'"></span>
-                            </div>
+                    <!-- Lat & Long Display -->
+                    <div x-show="hasMarker" class="mt-2 small text-muted">
+                        <div class="row">
+                            <strong>Latitude:</strong> <span x-text="$wire.lat.toFixed(6)"></span><br>
+                            <strong>Longitude:</strong> <span x-text="$wire.lon.toFixed(6)"></span>
                         </div>
+                        <div class="row" wire:ignore>
+                            <label for="commodity-dropdown" class="col-form-label">Commodity <span
+                                    class="text-danger">*</span> </label>
+                            <select id="commodity-dropdown" class="form-select" name="state" style="width:100%"
+                                placeholder="Select Commodity">
+                                <option></option>
+                                @foreach ($commodities as $commodity)
+                                    <option value="{{ $commodity->id }}">{{ $commodity->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="intervention" class="col-form-label">Interventions <span
+                                    class="text-danger">*</span> </label>
+                            <textarea class="form-control" wire:model='interventions' rows="5" placeholder="Please enter interventions">
 
-                        <div class="row text-body">
-                            <div class="col-md-6 mb-2">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-semibold text-dark me-2" style="min-width: 90px;">Latitude:</span>
-                                    <span x-text="$wire.lat ? $wire.lat.toFixed(6) : '-'"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-semibold text-dark me-2" style="min-width: 90px;">Longitude:</span>
-                                    <span x-text="$wire.lon ? $wire.lon.toFixed(6) : '-'"></span>
-                                </div>
-                            </div>
+                           </textarea>
+                        </div>
+                        <div class="text-end mt-4">
+                            <button class="btn btn-success" wire:click="addTempCommodity"><i
+                                    class="bi bi-plus-circle me-2"></i>Add Commodity</button>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="commoditySelect" class="form-label font-weight-bold">Select Commodity:</label>
-                        <x-select2 name="commoditySelect" id="commoditySelect" class="search-input" :options="$commodities"
-                            wireModel='selectedCommodity'>
-                            @foreach ($commodities as $commodity)
-                                <option value="{{ $commodity->id }}"
-                                    {{ $commodity->id == $selectedCommodity ? 'selected' : '' }}>{{ $commodity->name }}
-                                </option>
-                            @endforeach
-                        </x-select2>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="interventionSelect" class="form-label font-weight-bold">Select
-                            Intervention:</label>
-                        <x-select2-multiple multi="true" name="interventionSelect" id="interventionSelect"
-                            class="search-input" wireModel='selectedInterventions'>
-                            @foreach ($interventions as $intervention)
-                                <option value="{{ $intervention->id }}"
-                                    {{ in_array($intervention->id, $selectedInterventions) ? 'selected' : '' }}>
-                                    {{ $intervention->name }}
-                                </option>
-                            @endforeach
-                        </x-select2-multiple>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="d-flex justify-content-end">
-                            <button class="btn btn-success " wire:click="addTempCommodity"><i
-                                    class="bi bi-plus-circle me-2"></i>Add Entry</button>
+                    <div class="small text-muted">
+                        <div class="mt-4 ">
+                            <button class="btn btn-primary  text-center w-100" wire:click="saveUpdates">Save
+                                Updates</button>
                         </div>
                     </div>
-                </div>
-                <div class="bg-white rounded-4 shadow-md p-4 mb-4">
-                    <button class="btn search-button w-100" type="button" wire:click="saveUpdates">Save
-                        Updates</button>
 
-                    <p class="text-muted mt-3 mb-0" style="font-size: 0.9rem;">
-                        <strong>How to use this form:</strong><br>
-                        - Pin or search for a location on the map to activate the input form.<br>
-                        - Select the relevant agricultural commodity and one or more interventions.<br>
-                        - Click <strong>"Add Entry"</strong> to add the selection to the map.<br>
-                        - To remove an entry, click its pin on the map and then click the <strong>trash icon (<i
-                                class="bi bi-trash-fill text-danger"></i>)</strong>.<br>
-                        - <strong>Remember to click "Save Updates" to apply all changes.</strong>
-                    </p>
                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Map Column -->
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white fw-bold">
+                Map Viewer
+            </div>
+            <div class="card-body p-0">
+                <div wire:ignore id="map"></div>
             </div>
         </div>
     </div>
-</section>
+</div>
 @script
     <script>
         $(document).ready(function() {
@@ -293,7 +225,7 @@ new class extends Component {
                 });
             });
             Livewire.on('resetDropDown', () => {
-                const select = $('#interventionSelect,#commoditySelect');
+                const select = $('#commodity-dropdown');
                 select.val(null).trigger('change');
             });
         });
@@ -315,18 +247,7 @@ new class extends Component {
                 markersTemporary: [],
 
                 initMap() {
-                    const philippinesBounds = L.latLngBounds(
-                        L.latLng(4.215806, 116.931885), // Southwest
-                        L.latLng(21.321780, 126.604385) // Northeast
-                    );
-
-                    this.map = L.map('map', {
-                        maxBounds: philippinesBounds,
-                        maxBoundsViscosity: 1.0,
-                        minZoom: 5,
-                        maxZoom: 18
-                    }).setView([this.lat, this.lon], 6);
-
+                    this.map = L.map('map').setView([this.lat, this.lon], 6);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 19,
                     }).addTo(this.map);
@@ -385,15 +306,7 @@ new class extends Component {
                         <div class="fw-bold mb-2 text-primary">
                             ${entry.commodity.name}
                         </div>
-                       <div class="small text-muted my-2 text-start">
-                            <ul class="mb-0 ps-3">
-                            ${
-                                entry.geo_interventions && entry.geo_interventions.length > 0
-                                ? entry.geo_interventions.map(i => `<li>${i.intervention?.name || ''}</li>`).join('')
-                                : '<li>No interventions</li>'
-                            }
-                        </ul>
-                        </div>
+                        <div class="small text-muted my-2" style="text-align: justify">${entry.interventions}</div>
                         <hr>
                         <div class="d-flex justify-content-center">
                         <button onclick="window.deleteTempCommodity(${entry.id}, 0)"
@@ -429,15 +342,7 @@ new class extends Component {
                         <div class="fw-bold mb-2 text-primary">
                             ${entry.commodity.name} (Temporary)
                         </div>
-                       <div class="small text-muted my-2 text-start">
-                            <ul class="mb-0 ps-3">
-                                ${
-                                    entry.geo_interventions && entry.geo_interventions.length > 0
-                                    ? entry.geo_interventions.map(i => `<li>${i.intervention?.name || ''}</li>`).join('')
-                                    : '<li>No interventions</li>'
-                                }
-                            </ul>
-                        </div>
+                       <div class="small text-muted my-2" style="text-align: justify">${entry.interventions}</div>
                         <hr>
                         <div class="d-flex justify-content-center">
                         <button onclick="window.deleteTempCommodity(${entry.commodity.id}, 1)"
@@ -511,26 +416,17 @@ new class extends Component {
                             this.marker = null;
                             this.hasMarker = false;
                         }
-                        return;
+                        return; // Exit early
                     }
-
-                    const popupContent = label || 'Pinned Location';
-
                     if (this.marker) {
                         this.marker.setLatLng([lat, lon]);
-                        this.marker.setPopupContent(popupContent);
-                        this.marker.openPopup(); // safe here if already added
+                        this.marker.setPopupContent(label || 'Pinned Location');
                     } else {
                         this.marker = L.marker([lat, lon], {
                                 draggable: true
-                            })
-                            .addTo(this.map)
-                            .bindPopup(popupContent);
-
-                        // ✅ Fix: safely open popup only after marker is added
-                        this.marker.on('add', () => {
-                            this.marker.openPopup();
-                        });
+                            }).addTo(this.map)
+                            .bindPopup(label || 'Pinned Location')
+                            .openPopup();
 
                         this.marker.on('dragend', (e) => {
                             const newLatLng = e.target.getLatLng();
@@ -538,23 +434,24 @@ new class extends Component {
                             this.lon = newLatLng.lng;
                             this.$wire.set('lat', this.lat);
                             this.$wire.set('lon', this.lon);
+
                             this.reverseGeocode(this.lat, this.lon, true);
                         });
                     }
 
                     this.hasMarker = true;
                     this.selectedLabel = label;
+                    this.marker.openPopup();
                 },
 
                 reverseGeocode(lat, lon, updateMap = false) {
                     fetch(
-                            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&countrycodes=ph`
+                            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`
                         )
                         .then(res => res.json())
                         .then(data => {
                             const name = data.display_name || `Lat: ${lat.toFixed(5)}, Lng: ${lon.toFixed(5)}`;
                             this.query = name;
-                            this.$wire.set('query', name);
                             this.selectedLabel = name;
 
                             this.results = [];

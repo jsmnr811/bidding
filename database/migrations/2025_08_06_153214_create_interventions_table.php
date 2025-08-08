@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('geo_commodities', function (Blueprint $table) {
+        Schema::create('interventions', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('province_id');
-            $table->unsignedBigInteger('commodity_id');
-            $table->decimal('longitude', 10, 6);
-            $table->decimal('latitude', 10, 6);
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -26,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('geo_commodities');
+        Schema::dropIfExists('interventions');
     }
 };
