@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'geomapping' => [
+            'driver' => 'session',
+            'provider' => 'geomapping_users',
+        ],
     ],
 
     /*
@@ -63,6 +67,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'geomapping_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\GeomappingUser::class,
         ],
 
         // 'users' => [
