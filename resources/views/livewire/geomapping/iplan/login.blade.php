@@ -26,11 +26,12 @@ new class extends Component {
         $user = GeomappingUser::where('login_code', $this->accessCode)->first();
 
         if ($user) {
-            Auth::guard('geomapping')->login($user); // ← manually logs in the user
+            Auth::guard('geomapping')->login($user);
             return redirect()->intended(route('geomapping.iplan.landing'));
         }
 
-        return back()->withErrors(['login_code' => 'Invalid login code.']);
+        // Instead of returning back(), add an error to the component state
+        $this->addError('accessCode', 'Invalid login code.');
     }
 };
 ?>
