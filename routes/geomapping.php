@@ -3,6 +3,10 @@
 use App\Services\SidlanAPIServices;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Route;
+use App\Livewire\CodeLogin;
+
+Route::get('/code-login', CodeLogin::class)->name('investment-forum');
+
 
 Route::name('geomapping.')->prefix('geomapping')->group(function () {
     Route::name('iplan.')->prefix('iplan')->group(function () {
