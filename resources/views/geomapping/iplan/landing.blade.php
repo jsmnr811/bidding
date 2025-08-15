@@ -155,7 +155,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="#">Agri-Commodities</a>
+            <a class="navbar-brand" href="#">PRDP INVESTMENT FORUM</a>
             @auth('geomapping')
             <livewire:geomapping.iplan.logout />
             @endauth
@@ -179,15 +179,15 @@
     </nav>
 
     <!-- Hero Section -->
-    <header class="hero-section mb-5">
+    <!-- <header class="hero-section mb-5">
         <div class="container">
             <h1>Dynamic Agricultural Planning</h1>
             <p class="lead mt-3">Pin your location to get tailored insights on commodities and interventions.</p>
         </div>
-    </header>
+    </header> -->
 
     <!-- Main Content Section -->
-    <main class="container">
+    <main class="container my-4">
         <livewire:geomapping.iplan.main-map>
     </main>
 
