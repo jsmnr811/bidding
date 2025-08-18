@@ -19,7 +19,7 @@ new class extends Component {
 
         $totals = $this->computePipeline($irZeroOneData, $irZeroTwoData, $irZeroThreeAData, $irZeroThreeBData);
 
-        $totalAllocation = 100; //Static value - change to correct value
+        $totalAllocation = 100;
 
         $pipeline = $totals['pipeline'];
 
@@ -52,13 +52,11 @@ new class extends Component {
         $zeroThreeA = collect($zeroThreeAData);
         $zeroThreeB = collect($zeroThreeBData);
 
-        $nol1Lookup = $zeroTwo->mapWithKeys(fn($item) => [$item['sp_id'] => $item['nol1_issued']]);
-
         $pipelineItems = $zeroOne->filter(fn($item) => $item['stage'] === 'Pre-procurement' && $item['status'] === 'Subproject Confirmed');
 
         $pipeline = $pipelineItems->count();
 
-        $clusterOrder = ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'];
+        $statusOrder = ['No. of SPs', 'Luzon B', 'Visayas', 'Mindanao'];
         $clusterColors = [
             'Luzon A' => '#004EF5',
             'Luzon B' => '#1ABC9C',
