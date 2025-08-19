@@ -17,7 +17,7 @@ new class extends Component {
 
         $totals = $this->computePipelineAndApproved($irZeroOneData, $irZeroTwoData);
 
-        $totalAllocation = 100; //Static value - change to correct value
+        $totalAllocation = 30; //Static value - change to correct value
 
         $pipeline = $totals['pipeline'];
 
@@ -180,7 +180,7 @@ new class extends Component {
             </div>
             <div class="row">
                 <div class="tile-container h-100 d-flex flex-column">
-                    <div class="tile-title" style="font-size: 1.2rem;">Cost of Approved Subprojects by Cluster</div>
+                    <div class="tile-title" style="font-size: 1.2rem;">Cost of Approved Subprojects by Cluster (in Billion Pesos)</div>
                     <div class="tile-content position-relative overflow-hidden flex-grow-1 chart-container"
                         x-data="ApprovedPieChart()" x-init="init()">
                         <canvas id="chart-cluster-approved"
@@ -336,7 +336,7 @@ new class extends Component {
                             datalabels: {
                                 anchor: 'end',
                                 align: 'end',
-                                offset: 16,
+                                offset: 8,
                                 clip: false,
                                 color: (context) => {
                                     // Match label color with corresponding slice color
@@ -394,7 +394,7 @@ new class extends Component {
                                     font: {
                                         size: 12
                                     },
-                                    padding: 20 // <-- Increase space between chart and legend
+                                    padding: 30
                                 }
                             },
                             tooltip: {
@@ -406,7 +406,7 @@ new class extends Component {
                             datalabels: {
                                 anchor: 'end',
                                 align: 'end',
-                                offset: 6,
+                                offset: 8,
                                 clip: false,
                                 color: (context) => {
                                     // Match label color with corresponding slice color
@@ -417,7 +417,7 @@ new class extends Component {
                                     weight: 'bold',
                                     size: 12
                                 },
-                                formatter: value => `₱ ${(value / 1_000_000_000).toFixed(2)}B`
+                                formatter: value => `${(value / 1_000_000_000).toFixed(2)}`
                             }
                         }
                     },

@@ -1,5 +1,4 @@
 <?php
-<?php
 
 use App\Services\SidlanAPIServices;
 use Illuminate\View\View;
