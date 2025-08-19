@@ -16,12 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register your route middleware alias here
         $middleware->alias([
             'guest-geo' => RedirectIfAuthenticated::class,
-            'auth-geo' => RedirectIfUnauthenticated::class,
+            'auth-geo'  => RedirectIfUnauthenticated::class,
         ]);
 
-        // You can register other middleware here similarly, e.g.:
+        // Example if you need route-specific middleware:
         // $middleware->route('auth', \App\Http\Middleware\Authenticate::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->create();   // ✅ must end on its own line

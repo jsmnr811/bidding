@@ -207,7 +207,7 @@ new class extends Component {
     <!-- Map and Location Section -->
     <div class="col-lg-9">
         <div class="card shadow-sm p-4 h-100">
-            <h5 class="mb-3 fw-semibold">📍 Select Your Farm Location</h5>
+            <h5 class="mb-3 fw-semibold">📍 Select Your Location</h5>
             <!-- Search Bar -->
             <!-- Relative container to anchor the floating dropdown -->
             <div class="position-relative mb-3">
