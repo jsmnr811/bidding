@@ -20,7 +20,7 @@
 
     <!-- Scripts -->
 
-    <!-- @vite(['resources/css/app.css', 'resources/js/app.js']) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="{{ asset('build/assets/app.css') }}" rel="stylesheet" />
     <script src="{{ asset('build/assets/app.js') }}"></script>
 
@@ -41,7 +41,7 @@
 
     <!-- Livewire Scripts -->
     @livewireScripts
-    
+
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 
 </body>

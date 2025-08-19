@@ -78,8 +78,8 @@
         </div>
 
 
-        <livewire:sidlan.ireap.section-1 :irZeroOneData="$irZeroOneData" lazy />
-        <livewire:sidlan.ireap.section-2 :irZeroOneData="$irZeroOneData" lazy />
+        {{-- <livewire:sidlan.ireap.section-1 :irZeroOneData="$irZeroOneData" lazy /> --}}
+        {{-- <livewire:sidlan.ireap.section-2 :irZeroOneData="$irZeroOneData" lazy /> --}}
 
 
         <div class="section-title ps-lg-2 d-flex flex-column flex-lg-row justify-content-between align-items-start">
