@@ -13,10 +13,22 @@ class GeomappingUser extends Authenticatable
         'login_code',
         'group',
         'lat_long',
+        'firstname',
+        'middlename',
+        'lastname',
+        'region_id',
+        'province_id',
+        'affiliation',
+        'designation',
+        'gender',
+        'phone',
+        'email',
+        'vulnerability',
+        'food_restriction',
+        'image',
     ];
 
-    protected $hidden = [
-    ];
+    protected $hidden = [];
 
     public $timestamps = true;
 }

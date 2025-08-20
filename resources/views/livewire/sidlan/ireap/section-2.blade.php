@@ -14,6 +14,9 @@ new class extends Component {
     public $tableData = [];
     public $filterKey = 'All';
     public $loader = false;
+    public string $modalTitle = '';
+    public string $modalSubtitle = '';
+    public array $dataSets = [];
 
     public function mount(): void
     {
@@ -29,22 +32,25 @@ new class extends Component {
             'subject_count' => $underBusinessPlanPreparation['count'],
             'beyond_timeline_count' => $underBusinessPlanPreparation['beyondTimelineCount'],
             'key' => 'underBusinessPlanPreparation',
+            'average_difference_days' => $underBusinessPlanPreparation['average_difference_days'],
+
         ];
-        $dataSets['secondDummyDataSet'] = [
-            'title' => 'Second Data Set',
+        $dataSets['forRPABApproval'] = [
+            'title' => 'Under Review /  For RPAB Approval',
             'subject_count' => 0 + 11,
             'beyond_timeline_count' => 12,
-            'key' => 'secondDummyDataSet',
+            'key' => 'forRPABApproval',
         ];
-        $dataSets['thirdDummyDataSet'] = [
-            'title' => 'Third Data Set',
+        $dataSets['rpabApproved'] = [
+            'title' => 'RPAB Approved (For NOL 1)',
             'subject_count' => 13,
             'beyond_timeline_count' => 14,
-            'key' => 'thirdDataSet',
+            'key' => 'rpabApproved',
         ];
 
         $this->consolidatedTableData['underBusinessPlanPreparation']['subprojectItems'] = $underBusinessPlanPreparation['items'] ?? [];
         $this->consolidatedTableData['underBusinessPlanPreparation']['beyondTimelineItems'] = $underBusinessPlanPreparation['beyondTimeline'] ?? [];
+        $this->dataSets = $dataSets;
 
         return $dataSets;
     }
@@ -55,28 +61,109 @@ new class extends Component {
         $irZeroTwoData = $apiService->executeRequest(['dataset_id' => 'ir-01-002']);
         $zeroTwo = collect($irZeroTwoData);
         $items = [];
+
         if ($this->filterKey == 'All') {
-            $items = $zeroTwo->filter(fn($item) => $item['stage'] === 'Pre-procurement' && $item['specific_status'] === 'Subproject Confirmed' && !empty($item['subproject_confirmed']) && empty($item['business_plan_packaged']))->map(fn($item) => collect($item)->only(['cluster', 'region', 'province', 'city_municipality', 'proponent', 'project_name', 'subproject_confirmed']));
+            $items = $zeroTwo->filter(
+                fn($item) =>
+                $item['stage'] === 'Pre-procurement' &&
+                    $item['specific_status'] === 'Subproject Confirmed' &&
+                    !empty($item['subproject_confirmed']) &&
+                    empty($item['business_plan_packaged'])
+            )->map(function ($item) {
+                return collect($item)->only([
+                    'cluster',
+                    'region',
+                    'province',
+                    'city_municipality',
+                    'proponent',
+                    'project_name',
+                    'subproject_confirmed',
+                    'project_type',
+                    'stage',
+                    'specific_status'
+                ]);
+            });
         } elseif (in_array($this->filterKey, ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'])) {
-            $items = $zeroTwo->filter(fn($item) => $item['stage'] === 'Pre-procurement' && $item['specific_status'] === 'Subproject Confirmed' && !empty($item['subproject_confirmed']) && empty($item['business_plan_packaged']) && $item['cluster'] === $this->filterKey)->map(fn($item) => collect($item)->only(['cluster', 'region', 'province', 'city_municipality', 'proponent', 'project_name', 'subproject_confirmed']));
+            $items = $zeroTwo->filter(
+                fn($item) =>
+                $item['stage'] === 'Pre-procurement' &&
+                    $item['specific_status'] === 'Subproject Confirmed' &&
+                    !empty($item['subproject_confirmed']) &&
+                    empty($item['business_plan_packaged']) &&
+                    $item['cluster'] === $this->filterKey
+            )->map(function ($item) {
+                return collect($item)->only([
+                    'cluster',
+                    'region',
+                    'province',
+                    'city_municipality',
+                    'proponent',
+                    'project_name',
+                    'subproject_confirmed',
+                    'project_type',
+                    'stage',
+                    'specific_status'
+                ]);
+            });
         } else {
-            $items = $zeroTwo->filter(fn($item) => $item['stage'] === 'Pre-procurement' && $item['specific_status'] === 'Subproject Confirmed' && !empty($item['subproject_confirmed']) && empty($item['business_plan_packaged']) && $item['region'] === $this->filterKey)->map(fn($item) => collect($item)->only(['cluster', 'region', 'province', 'city_municipality', 'proponent', 'project_name', 'subproject_confirmed']));
+            $items = $zeroTwo->filter(
+                fn($item) =>
+                $item['stage'] === 'Pre-procurement' &&
+                    $item['specific_status'] === 'Subproject Confirmed' &&
+                    !empty($item['subproject_confirmed']) &&
+                    empty($item['business_plan_packaged']) &&
+                    $item['region'] === $this->filterKey
+            )->map(function ($item) {
+                return collect($item)->only([
+                    'cluster',
+                    'region',
+                    'province',
+                    'city_municipality',
+                    'proponent',
+                    'project_name',
+                    'subproject_confirmed',
+                    'project_type',
+                    'stage',
+                    'specific_status'
+                ]);
+            });
         }
 
         $now = now();
 
+        // Add date_difference to each item
+        $items = $items->map(function ($item) use ($now) {
+            $confirmedDate = Carbon::parse($item['subproject_confirmed']);
+            $dateDiff = (int) $confirmedDate->diffInDays($now); // ensure integer
+
+            // Format the date as "Jan 1, 2000"
+            $formattedDate = $confirmedDate->format('M j, Y');
+
+            return $item->merge([
+                'date_difference' => $dateDiff,
+                'subproject_confirmed' => $formattedDate,
+            ]);
+        });
+
+
         $beyondTimeline = $items->filter(function ($item) use ($now) {
             $confirmedDate = Carbon::parse($item['subproject_confirmed']);
-            return $now->diffInDays($confirmedDate) > 204;
+            return $confirmedDate->lt($now) && $confirmedDate->diffInDays($now) > 204;
         });
+
+        $averageDifferenceDays = $beyondTimeline->avg('date_difference');
+        $averageDifferenceDays = $averageDifferenceDays ? round($averageDifferenceDays) : 0;
 
         return [
             'items' => $items,
             'count' => $items->count(),
             'beyondTimeline' => $beyondTimeline,
             'beyondTimelineCount' => $beyondTimeline->count(),
+            'average_difference_days' => $averageDifferenceDays,
+
         ];
     }
+
 
     public function updatedFilterKey(): void
     {
@@ -94,13 +181,15 @@ new class extends Component {
     public function barClicked($key, $type): void
     {
         $innerKey = $type ? 'beyondTimelineItems' : 'subprojectItems';
-
         if (isset($this->consolidatedTableData[$key])) {
             $this->tableData = $this->consolidatedTableData[$key][$innerKey];
         } else {
             $this->tableData = [];
         }
-
+        $this->modalSubtitle = $this->dataSets[$key]['title'] ?? '';
+        if ($innerKey === 'beyondTimelineItems') {
+            $this->modalSubtitle .= ' (No. of SPs Beyond Timeline)';
+        }
         $this->subprojectModal = true;
     }
 
@@ -152,11 +241,19 @@ new class extends Component {
                         </select>
                     </div>
                 </div>
-                @if ($loader)
-                    loading
-                @endif
+
+
                 <div wire:ignore class="tile-content position-relative overflow-hidden chart-container"
                     style="height: 400px;">
+                    @if ($loader)
+                    <div class="loading-dots my-4 text-center">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+
+
+                    @endif
                     <canvas class="tile-chart position-absolute top-0 start-0 w-100 h-100"
                         id="subproject-chart"></canvas>
                 </div>
@@ -164,143 +261,218 @@ new class extends Component {
         </div>
     </div>
     @if ($subprojectModal)
-        <div class="modal fade show" id="helloModal" tabindex="-1" aria-modal="true" role="dialog"
-            style="display: block;">
-            <div class="modal-dialog modal-dialog-centered modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Greetings</h5>
-                        <button type="button" class="btn-close" wire:click='$set("subprojectModal", false)'
-                            aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        @if (count($tableData) > 0)
-                            <table class="table table-striped" id="subprojectTable">
-                                <thead>
-                                    <tr>
-                                        <th>Project Name</th>
-                                        <th>Proponent</th>
-                                        <th>Cluster</th>
-                                        <th>Region</th>
-                                        <th>Province</th>
-                                        <th>City/Municipality</th>
-                                        <th>Subproject Confirmed</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($tableData as $data)
-                                        <tr>
-                                            <td>{{ $data['project_name'] }}</td>
-                                            <td>{{ $data['proponent'] }}</td>
-                                            <td>{{ $data['cluster'] }}</td>
-                                            <td>{{ $data['region'] }}</td>
-                                            <td>{{ $data['province'] }}</td>
-                                            <td>{{ $data['city_municipality'] }}</td>
-                                            <td>{{ $data['subproject_confirmed'] }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        @else
-                            <p>No data found.</p>
-                        @endif
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary"
-                            wire:click='$set("subprojectModal", false)'>Close</button>
-                    </div>
+    <div class="modal fade show" id="helloModal" tabindex="-1" aria-modal="true" role="dialog" style="display: block;" aria-labelledby="helloModalLabel" aria-hidden="false">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+
+                <div class="modal-header position-relative flex-column align-items-start pb-0" style="border-bottom: none;">
+                    <h5 class="modal-title mb-0 fw-bold text-primary" id="helloModalLabel">
+                        I-REAP Subprojects in the Pipeline (Number of Subprojects by Status)
+                    </h5>
+                    <small class="text-warning fw-semibold" style="font-size: 1rem;">
+                        {{ $modalSubtitle }}
+                    </small>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 mt-2 me-2" wire:click='$set("subprojectModal", false)' aria-label="Close"></button>
                 </div>
+
+                <div class="modal-body">
+                    @if (count($tableData) > 0)
+                    <div style="overflow-x: auto;">
+                        <table class="table table-hover fix-header-table small mb-0" id="subprojectTable" style="width: auto; min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="white-space: nowrap;">Cluster</th>
+                                    <th style="white-space: nowrap;">Region</th>
+                                    <th style="white-space: nowrap;">Province</th>
+                                    <th style="white-space: nowrap;">City/Municipality</th>
+                                    <th style="white-space: nowrap;">Proponent</th>
+                                    <th style="white-space: nowrap;">SP Name</th>
+                                    <th style="white-space: nowrap;">Type</th>
+                                    <th style="white-space: nowrap;">Cost</th>
+                                    <th style="white-space: nowrap;">Stage</th>
+                                    <th style="white-space: nowrap;">Status</th>
+                                    <th style="white-space: nowrap;">No. of days</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($tableData as $data)
+                                <tr>
+                                    <td style="white-space: nowrap;">{{ $data['cluster'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['region'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['province'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['city_municipality'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['proponent'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['project_name'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['project_name'] }}</td>
+                                    <td style="white-space: nowrap;"></td>
+                                    <td style="white-space: nowrap;">{{ $data['stage'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['specific_status'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['date_difference'] . ' days from Date of confirmation (' . $data['subproject_confirmed'] . ')' }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <p>No data found.</p>
+                    @endif
+                </div>
+
             </div>
         </div>
-        <div class="modal-backdrop show"></div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
     @endif
+
 </div>
+<style>
+    .loading-dots {
+        display: inline-flex;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+    }
 
+    .loading-dots .dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        background-color: #6c757d;
+        border-radius: 50%;
+        animation: bounce 0.8s infinite alternate;
+    }
+
+    .loading-dots .dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .loading-dots .dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+        from {
+            transform: translateY(0);
+            opacity: 0.5;
+        }
+
+        to {
+            transform: translateY(-0.5rem);
+            opacity: 1;
+        }
+    }
+</style>
 @script
-    <script>
-        // Keep chart instance globally
-        window.chartInstance = null;
+<script>
+    // Keep chart instance globally
+    window.chartInstance = null;
 
-        window.ChartOne = function(chartData) {
-            const canvas = document.getElementById('subproject-chart');
+    window.ChartOne = function(chartData) {
+        const canvas = document.getElementById('subproject-chart');
 
-            if (!canvas) return; // prevent errors if canvas not in DOM
+        if (!canvas) return; // prevent errors if canvas not in DOM
 
-            const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
 
-            // Destroy previous chart if exists
-            if (window.chartInstance) {
-                window.chartInstance.destroy();
-                window.chartInstance = null;
-            }
+        // Destroy previous chart if exists
+        if (window.chartInstance) {
+            window.chartInstance.destroy();
+            window.chartInstance = null;
+        }
 
-            const groupKeys = Object.keys(chartData);
+        const groupKeys = Object.keys(chartData);
+        console.log(chartData);
 
-            window.chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: groupKeys.map(key => chartData[key].title),
-                    datasets: [{
-                            label: 'No. of Subprojects',
-                            backgroundColor: '#0066FF',
-                            data: groupKeys.map(key => chartData[key].subject_count)
-                        },
-                        {
-                            label: 'No. of Subprojects Beyond Timeline',
-                            backgroundColor: '#3EA9E5',
-                            data: groupKeys.map(key => chartData[key].beyond_timeline_count)
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
-                            }
-                        },
-                        datalabels: {
-                            display: true,
-                            color: '#000',
-                            font: {
-                                weight: 'bold',
-                                size: 12
-                            },
-                            align: 'end',
-                            anchor: 'end',
-                            formatter: value => value > 0 ? value : ''
+        const averageDiff = (() => {
+            let total = 0;
+            let count = 0;
+            groupKeys.forEach(k => {
+                if (chartData[k].average_difference_days) {
+                    total += chartData[k].average_difference_days;
+                    count++;
+                }
+            });
+            return count ? Math.round(total / count) : 0;
+        })();
+
+        window.chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: groupKeys.map(key => chartData[key].title),
+                datasets: [{
+                        label: 'No. of Subprojects',
+                        backgroundColor: '#0047e0',
+                        data: groupKeys.map(key => chartData[key].subject_count),
+                        borderRadius: 8,
+                    },
+                    {
+                        label: 'No. of Subprojects Beyond Timeline',
+                        backgroundColor: '#fa2314',
+                        data: groupKeys.map(key => chartData[key].beyond_timeline_count),
+                        borderRadius: 8,
+
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
                         }
                     },
-                    onClick: (evt, elements) => {
-                        if (!elements.length) return;
-                        const element = elements[0];
-                        const index = element.index;
-                        const key = groupKeys[index];
-                        const datasetIndex = element.datasetIndex;
-                        Livewire.dispatch('barClicked', {
-                            key,
-                            type: datasetIndex
-                        });
+                    datalabels: {
+                        display: true,
+                        color: '#000',
+                        font: {
+                            // weight: 'bold',
+                            size: 14
+                        },
+                        align: 'end',
+                        anchor: 'end',
+                        textAlign: 'center',
+                        formatter: function(value, context) {
+                            if (context.datasetIndex === 1 && value > 0) {
+                                return [
+                                    `${value}`,
+                                    `(${averageDiff} days vs`,
+                                    `204 days timeline)`
+                                ];
+
+                            }
+                            return value > 0 ? `${value}` : '';
+                        }
                     }
                 },
-                plugins: [ChartDataLabels]
-            });
-        };
-
-        // Trigger chart only when Livewire dispatches
-        Livewire.on('generateChart', data => {
-            setTimeout(() => {
-                if (data[0] && data[0].chartData) {
-                    window.ChartOne(data[0].chartData);
-
+                onClick: (evt, elements) => {
+                    if (!elements.length) return;
+                    const element = elements[0];
+                    const index = element.index;
+                    const key = groupKeys[index];
+                    const datasetIndex = element.datasetIndex;
+                    Livewire.dispatch('barClicked', {
+                        key,
+                        type: datasetIndex
+                    });
                 }
-            }, 50); // 50ms delay ensures canvas exists
-            $wire.set('loader', false);
+            },
+            plugins: [ChartDataLabels]
         });
-    </script>
+    };
+
+    // Trigger chart only when Livewire dispatches
+    Livewire.on('generateChart', data => {
+        setTimeout(() => {
+            if (data[0] && data[0].chartData) {
+                window.ChartOne(data[0].chartData);
+                $wire.set('loader', false);
+            }
+        }, 50); // 50ms delay ensures canvas exists
+        // $wire.set('loader', false);
+    });
+</script>
 @endscript

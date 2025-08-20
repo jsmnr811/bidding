@@ -17,11 +17,13 @@ new class extends Component {
 
         $totals = $this->computePipelineAndApproved($irZeroOneData, $irZeroTwoData);
 
-        $totalAllocation = 30; //Static value - change to correct value
 
         $pipeline = $totals['pipeline'];
 
         $approved = $totals['approved'];
+
+        $totalAllocation = $pipeline + $approved + 5;
+        $totalAllocation = ceil($totalAllocation / 10) * 10;
 
         $this->pipelinePieChartData = $totals['pipeline_chart_data'];
 
@@ -32,7 +34,7 @@ new class extends Component {
                 [
                     'label' => 'Total Allocation',
                     'data' => [$totalAllocation],
-                    'backgroundColor' => '#0066FF',
+                    'backgroundColor' => '#0047e0',
                     'stack' => 'Stack 0',
                 ],
                 [
@@ -44,7 +46,7 @@ new class extends Component {
                 [
                     'label' => 'Pipelined',
                     'data' => [$pipeline],
-                    'backgroundColor' => '#3EA9E5',
+                    'backgroundColor' => '#3498db',
                     'stack' => 'Stack 1',
                 ],
             ],
@@ -66,10 +68,10 @@ new class extends Component {
 
         $clusterOrder = ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'];
         $clusterColors = [
-            'Luzon A' => '#004EF5',
-            'Luzon B' => '#1ABC9C',
-            'Visayas' => '#3498DB',
-            'Mindanao' => '#9B59B6',
+            'Luzon A' => '#0047e0',
+            'Luzon B' => '#1abc9c',
+            'Visayas' => '#3498db',
+            'Mindanao' => '#9b59b6',
         ];
 
         // Group costs by cluster for pipeline and approved
@@ -215,9 +217,9 @@ new class extends Component {
                         labels: chartData.labels,
                         datasets: chartData.datasets.map(dataset => ({
                             ...dataset,
-                            borderRadius: 6, // Rounded bar corners
-                            barPercentage: 0.6, // Prevent bars from stretching full width
-                            categoryPercentage: 0.6, // Adds spacing between bars
+                            borderRadius: 8, // Rounded bar corners
+                            barPercentage: 0.7, // Prevent bars from stretching full width
+                            // categoryPercentage: 0.8, // Adds spacing between bars
                         }))
                     },
                     options: {
@@ -273,8 +275,8 @@ new class extends Component {
                                 display: true,
                                 color: 'white',
                                 font: {
-                                    weight: 'bold',
-                                    size: 12
+                                    // weight: 'bold',
+                                    size: 14
                                 },
                                 // formatter: value => value.toFixed(2)
                                 formatter: value => value === 0 ? '' : value.toFixed(2)
@@ -344,8 +346,8 @@ new class extends Component {
                                         .dataIndex];
                                 },
                                 font: {
-                                    weight: 'bold',
-                                    size: 12
+                                    // weight: 'bold',
+                                    size: 14
                                 },
                                 formatter: value => value === 0 ? '' : `${(value / 1_000_000_000).toFixed(2)}`
                             }
@@ -414,8 +416,8 @@ new class extends Component {
                                         .dataIndex];
                                 },
                                 font: {
-                                    weight: 'bold',
-                                    size: 12
+                                    // weight: 'bold',
+                                    size: 14
                                 },
                                 formatter: value => `${(value / 1_000_000_000).toFixed(2)}`
                             }
