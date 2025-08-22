@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Investment Forum 2025' }}</title>
+    @stack('styles')
     @vite('resources/css/app.css')
     @vite('resources/js/app.js')
     @livewireStyles
@@ -14,7 +15,8 @@
 </head>
 
 
-<body class="bg-gray-50">
+<body class="bg-gray-50 ">
+       <div class="min-h-screen flex flex-col">
     <header>
         <nav class="bg-white border-gray-200 px-4 lg:px-6 py-2.5 dark:bg-gray-800">
             <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
@@ -59,21 +61,44 @@
         </nav>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6">
-        {{ $slot }}
-    </main>
+<main class="flex-grow w-full px-6 py-6">
+    {{ $slot }}
+</main>
 
     {{-- ✅ Footer --}}
-    <footer class="p-4 bg-white md:p-8 lg:p-10 dark:bg-gray-800">
-        <div class="mx-auto max-w-screen-xl text-center">
-            <a href="#" class="flex justify-center items-center text-2xl font-semibold text-gray-900 dark:text-white">
-                <img src="{{ asset('media/Scale-Up.png') }}" alt="My Icon" class="w-100 h-24">
+<footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 py-8">
+    <div class="max-w-screen-xl mx-auto px-4 text-center">
+        <!-- Logo -->
+        <div class="flex justify-center mb-4">
+            <a href="#">
+                <img src="{{ asset('media/Scale-Up.png') }}" alt="Scale-Up Logo" class="h-20 w-auto">
             </a>
-            <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400 ms-4">© {{ date('Y') }} <a href="#" class="hover:underline">Philippine Rural Development Project</a>. All Rights Reserved.</span>
         </div>
-    </footer>
+
+        <!-- Copyright -->
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            © {{ date('Y') }}
+            <a href="#" class="font-medium text-gray-700 dark:text-white hover:underline">
+                Philippine Rural Development Project
+            </a>.
+            All Rights Reserved.
+        </p>
+
+        <!-- Optional social icons or links (you can add here if needed) -->
+        <!--
+        <div class="mt-4 flex justify-center space-x-6">
+            <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white">Facebook</a>
+            <a href="#" class="text-gray-400 hover:text-gray-900 dark:hover:text-white">Twitter</a>
+        </div>
+        -->
+    </div>
+</footer>
+       </div>
+
+    @stack('modals')
 
     @livewireScripts
+    @stack('scripts')
 </body>
 
 </html>

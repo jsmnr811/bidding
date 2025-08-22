@@ -61,13 +61,13 @@
                     </div>
 
                     <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Sex <span class="text-red-600">*</span></label>
-                        <select wire:model="sex" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
-                            <option value="">Select Sex</option>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Gender <span class="text-red-600">*</span></label>
+                        <select wire:model="gender" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+                            <option value="">Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                         </select>
-                        @error('sex') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        @error('gender') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
             </div>
@@ -114,12 +114,14 @@
 
                     {{-- Region --}}
                     <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Region</label>
-                        <select wire:model.live="region"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Region <span class="text-red-600">*</span>
+                        </label>
+                        <select wire:model="region" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5
+                       dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                             <option value="">Select Region</option>
                             @foreach($regions as $reg)
-                            <option value="{{ $reg->code }}">{{ $reg->abbr }}</option>
+                            <option value="{{ $reg->id }}">{{ $reg->region_short_name }}</option>
                             @endforeach
                         </select>
                         @error('region') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -127,61 +129,65 @@
 
                     {{-- Province --}}
                     <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Province</label>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Province <span class="text-red-600">*</span>
+                        </label>
                         <select wire:model="province" @if(count($provinces)==0) disabled @endif
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5
+                       dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                             <option value="">Select Province</option>
                             @foreach($provinces as $prov)
-                            <option value="{{ $prov->code }}">{{ $prov->name }}</option>
+                            <option value="{{ $prov->id }}">{{ $prov->PROVINCE }}</option>
                             @endforeach
                         </select>
                         @error('province') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
+            </div>
 
 
-                {{-- 📞 Contact Info --}}
-                <div>
-                    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Contact Information <span class="text-red-600">*</span></h3>
-                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email <span class="text-red-600">*</span></label>
-                            <input type="email" wire:model="email" placeholder="you@example.com"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
-                            @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+            {{-- 📞 Contact Info --}}
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Contact Info <span class="text-red-600">*</span></h3>
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email <span class="text-red-600">*</span></label>
+                        <input type="email" wire:model="email" placeholder="you@example.com"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+                        @error('email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
 
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number <span class="text-red-600">*</span></label>
-                            <input type="text" wire:model="contact_number" minlength="11" maxlength="11" placeholder="09123456789"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
-                            @error('contact_number') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact No. <span class="text-red-600">*</span></label>
+                        <input type="text" wire:model="contact_no" minlength="11" maxlength="11" placeholder="09123456789"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5">
+                        @error('contact_no') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
+            </div>
 
-                {{-- Others --}}
-                <div>
-                    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Others</h3>
-                    <div class="grid grid-cols-1">
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Food Restriction <span class="text-red-600">*</span><span class="text-gray-400"> (Put N/A if not applicable)</span></label>
-                        <textarea wire:model="food_restriction" rows="3"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5
+            {{-- Others --}}
+            <div>
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Others</h3>
+                <div class="grid grid-cols-1">
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Food Restriction <span class="text-red-600">*</span><span class="text-gray-400"> (Put N/A if not applicable)</span></label>
+                    <textarea wire:model="food_restriction" rows="3"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5
                           dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            placeholder="Specify any food restriction..."></textarea>
-                        @error('food_restriction') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
+                        placeholder="Specify any food restriction..."></textarea>
+                    @error('food_restriction') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
+            </div>
 
-                <!-- Submit Button Aligned Right -->
-                <div class="flex justify-end">
-                    <button type="submit"
-                        class="mt-6 inline-flex items-center px-5 py-2.5 text-sm font-medium text-center
-        text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4
+            <!-- Submit Button Aligned Right -->
+            <div class="flex justify-end">
+                <button type="submit"
+                    class="mt-6 inline-flex items-center px-5 py-2.5 text-sm font-medium text-center 
+        text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 
         focus:ring-blue-300 dark:focus:ring-blue-800">
-                        Register
-                    </button>
-                </div>
+                    Register
+                </button>
+            </div>
 
         </form>
     </div>

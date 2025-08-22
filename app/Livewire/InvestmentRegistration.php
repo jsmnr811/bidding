@@ -54,7 +54,7 @@ class InvestmentRegistration extends Component
 
     public function updatedRegion($value)
     {
-        $provs = Province::where('REGION_ID', $value)->orderBy('PROVINCE')->get();
+        $provs = Province::where('region_code', $value)->orderBy('name')->get();
         $this->provinces = $provs;
         $this->province = null;
     }
@@ -122,35 +122,14 @@ class InvestmentRegistration extends Component
         //     logger()->error("Email sending failed: {$mail->ErrorInfo}");
         // }
 
-        $this->reset();
+                $this->resetExcept('regions');
+
         LivewireAlert::title('Success!')
             ->text('You have been successfully registered.')
             ->success()
             ->toast()
             ->position('top-end')
             ->show();
-    }
-
-    public function resetForm()
-    {
-        $this->reset([
-            'image',
-            'firstname',
-            'middlename',
-            'lastname',
-            'ext_name',
-            'sex',
-            'institution',
-            'office',
-            'designation',
-            'region',
-            'province',
-            'email',
-            'contact_number',
-            'food_restriction',
-        ]);
-
-        $this->provinces = collect(); 
     }
 
     public function render()
