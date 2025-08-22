@@ -17,22 +17,24 @@ new class extends Component {
 
         $totals = $this->computePipelineAndApproved($irZeroOneData, $irZeroTwoData);
 
-        $totalAllocation = 100; //Static value - change to correct value
 
         $pipeline = $totals['pipeline'];
 
         $approved = $totals['approved'];
 
+        $totalAllocation = $pipeline + $approved + 5;
+        $totalAllocation = ceil($totalAllocation / 10) * 10;
+
         $this->pipelinePieChartData = $totals['pipeline_chart_data'];
 
         $this->approvedPieChartData = $totals['approved_chart_data'];
         $this->chartData = [
-            'labels' => ['Chart One'],
+            'labels' => ['Subproject Portfolio'],
             'datasets' => [
                 [
                     'label' => 'Total Allocation',
                     'data' => [$totalAllocation],
-                    'backgroundColor' => '#0066FF',
+                    'backgroundColor' => '#0047e0',
                     'stack' => 'Stack 0',
                 ],
                 [
@@ -44,7 +46,7 @@ new class extends Component {
                 [
                     'label' => 'Pipelined',
                     'data' => [$pipeline],
-                    'backgroundColor' => '#3EA9E5',
+                    'backgroundColor' => '#3498db',
                     'stack' => 'Stack 1',
                 ],
             ],
@@ -66,10 +68,10 @@ new class extends Component {
 
         $clusterOrder = ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'];
         $clusterColors = [
-            'Luzon A' => '#004EF5',
-            'Luzon B' => '#1ABC9C',
-            'Visayas' => '#3498DB',
-            'Mindanao' => '#9B59B6',
+            'Luzon A' => '#0047e0',
+            'Luzon B' => '#1abc9c',
+            'Visayas' => '#3498db',
+            'Mindanao' => '#9b59b6',
         ];
 
         // Group costs by cluster for pipeline and approved
@@ -101,8 +103,6 @@ new class extends Component {
             $approvedCostsPerCluster[$cluster] = $approvedCostsRaw[$cluster] ?? 0.0;
         }
 
-        // Prepare data structures including colors for charts (optional)
-        // For example, if you want to return array of arrays for chart datasets:
 
         $pipelineChartData = [];
         $approvedChartData = [];
@@ -140,7 +140,7 @@ new class extends Component {
 <div class="row row-cols-1 row-cols-lg-2 row-gap-4 mt-5">
     <div class="col">
         <div class="tile-container">
-            <div class="tile-title ">Chart One</div>
+            <div class="tile-title ">Subproject Financing (in Billion Pesos)</div>
             <div class="tile-content position-relative overflow-hidden chart-container" style="height: 400px;"
                 x-data="ChartOne()" x-init="init()">
                 <canvas class="tile-chart position-absolute top-0 start-0 w-100 h-100" id="chart-one"></canvas>
@@ -157,7 +157,7 @@ new class extends Component {
                     </li>
                     <li>
                         Cost of pipelined SPs is <span id="pipeline-budget-stat" class="text-danger">above</span> the
-                        remainng
+                        remaining
                         fund (unallocated) for financing rural
                         infrastructures, by <span id="pipeline-excess">39.8</span>% (Php <span id="excess-amount">6.42
                             B</span>)
@@ -170,7 +170,7 @@ new class extends Component {
         <div class="row row-cols-1 row-gap-4 h-100">
             <div class="row">
                 <div class="tile-container h-100 d-flex flex-column">
-                    <div class="tile-title" style="font-size: 1.2rem;">Cost of Pipelined Subprojects by Cluster</div>
+                    <div class="tile-title" style="font-size: 1.2rem;">Cost of Pipelined Subprojects by Cluster (in Billion Pesos)</div>
                     <div class="tile-content position-relative overflow-hidden flex-grow-1 chart-container"
                         x-data="PipelinePieChart()" x-init="init()">
                         <canvas id="chart-cluster-pipeline"
@@ -180,7 +180,7 @@ new class extends Component {
             </div>
             <div class="row">
                 <div class="tile-container h-100 d-flex flex-column">
-                    <div class="tile-title" style="font-size: 1.2rem;">Cost of Approved Subprojects by Cluster</div>
+                    <div class="tile-title" style="font-size: 1.2rem;">Cost of Approved Subprojects by Cluster (in Billion Pesos)</div>
                     <div class="tile-content position-relative overflow-hidden flex-grow-1 chart-container"
                         x-data="ApprovedPieChart()" x-init="init()">
                         <canvas id="chart-cluster-approved"
@@ -193,236 +193,238 @@ new class extends Component {
     </div>
 </div>
 @script
-    <script>
-        let approvedChart = null;
-        window.ChartOne = function() {
-            let chartInstance = null; // Track the chart instance
+<script>
+    let approvedChart = null;
+    window.ChartOne = function() {
+        let chartInstance = null; // Track the chart instance
 
-            return {
-                init() {
-                    const canvas = document.getElementById('chart-one');
-                    const ctx = canvas.getContext('2d');
+        return {
+            init() {
+                const canvas = document.getElementById('chart-one');
+                const ctx = canvas.getContext('2d');
 
-                    if (chartInstance !== null) {
-                        chartInstance.destroy();
-                    }
+                if (chartInstance !== null) {
+                    chartInstance.destroy();
+                }
 
-                    const chartData = @json($chartData);
+                const chartData = @json($chartData);
 
-                    chartInstance = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: chartData.labels,
-                            datasets: chartData.datasets.map(dataset => ({
-                                ...dataset,
-                                borderRadius: 12, // Rounded bar corners
-                                barPercentage: 0.6, // Prevent bars from stretching full width
-                                categoryPercentage: 0.6, // Adds spacing between bars
-                            }))
+                chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: chartData.datasets.map(dataset => ({
+                            ...dataset,
+                            borderRadius: 8, // Rounded bar corners
+                            barPercentage: 0.7, // Prevent bars from stretching full width
+                            // categoryPercentage: 0.8, // Adds spacing between bars
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                top: 10,
+                                bottom: 10,
+                                left: 10,
+                                right: 10
+                            }
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            layout: {
-                                padding: {
-                                    top: 10,
-                                    bottom: 10,
-                                    left: 10,
-                                    right: 10
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    stacked: true,
-                                    grid: {
-                                        display: false
-                                    },
-                                    ticks: {
-                                        font: {
-                                            size: 12
-                                        }
-                                    }
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: {
+                                    display: false
                                 },
-                                y: {
-                                    stacked: true,
-                                    beginAtZero: true,
-                                    ticks: {
-                                        callback: value => value + 'B',
-                                        font: {
-                                            size: 12
-                                        }
+                                ticks: {
+                                    font: {
+                                        size: 12
                                     }
                                 }
                             },
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    labels: {
-                                        color: '#000',
-                                        font: {
-                                            size: 13
-                                        }
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: context => `${context.dataset.label}: ${context.parsed.y}B`
-                                    }
-                                },
-                                datalabels: {
-                                    display: true,
-                                    color: 'white',
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => value + 'B',
                                     font: {
-                                        weight: 'bold',
                                         size: 12
-                                    },
-                                    formatter: value => value.toFixed(2)
+                                    }
                                 }
                             }
                         },
-                        plugins: [ChartDataLabels]
-                    });
-                }
-            };
-        }
-        // Pipeline Pie Chart
-        window.PipelinePieChart = function() {
-            let pipelineChart = null;
-
-            return {
-                init() {
-                    const rawData = @json($pipelinePieChartData);
-                    const canvas = document.getElementById('chart-cluster-pipeline');
-                    if (!canvas) return;
-
-                    // Destroy if already exists
-                    if (pipelineChart) {
-                        pipelineChart.destroy();
-                    }
-
-                    const ctx = canvas.getContext('2d');
-                    const data = {
-                        labels: rawData.map(d => d.label),
-                        datasets: [{
-                            data: rawData.map(d => d.data),
-                            backgroundColor: rawData.map(d => d.backgroundColor)
-                        }]
-                    };
-
-                    pipelineChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: data,
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        font: {
-                                            size: 12
-                                        },
-                                        padding: 20 // <-- Increase space between chart and legend
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: ctx =>
-                                            `${ctx.label}: ₱ ${ctx.parsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    }
-                                },
-                                datalabels: {
-                                    anchor: 'end',
-                                    align: 'end',
-                                    offset: 6,
-                                    clip: false,
-                                    color: (context) => {
-                                        // Match label color with corresponding slice color
-                                        return context.chart.data.datasets[0].backgroundColor[context
-                                            .dataIndex];
-                                    },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    color: '#000',
                                     font: {
-                                        weight: 'bold',
-                                        size: 12
-                                    },
-                                    formatter: value => `₱ ${(value / 1_000_000_000).toFixed(2)}B`
+                                        size: 13
+                                    }
                                 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `${context.dataset.label}: ${context.parsed.y}B`
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                color: 'white',
+                                font: {
+                                    // weight: 'bold',
+                                    size: 14
+                                },
+                                // formatter: value => value.toFixed(2)
+                                formatter: value => value === 0 ? '' : value.toFixed(2)
+
                             }
-                        },
-                        plugins: [ChartDataLabels]
-                    });
-                }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
             }
         };
+    }
+    // Pipeline Pie Chart
+    window.PipelinePieChart = function() {
+        let pipelineChart = null;
 
-        // Approved Pie Chart
-        window.ApprovedPieChart = function() {
-            return {
-                init() {
-                    const rawData = @json($approvedPieChartData);
+        return {
+            init() {
+                const rawData = @json($pipelinePieChartData);
+                const canvas = document.getElementById('chart-cluster-pipeline');
+                if (!canvas) return;
 
-                    const canvas = document.getElementById('chart-cluster-approved');
-                    if (!canvas) return;
+                // Destroy if already exists
+                if (pipelineChart) {
+                    pipelineChart.destroy();
+                }
 
-                    // destroy previous chart
-                    if (Chart.getChart(canvas)) {
-                        Chart.getChart(canvas).destroy();
-                    }
+                const ctx = canvas.getContext('2d');
+                const data = {
+                    labels: rawData.map(d => d.label),
+                    datasets: [{
+                        data: rawData.map(d => d.data),
+                        backgroundColor: rawData.map(d => d.backgroundColor)
+                    }]
+                };
 
-                    const ctx = canvas.getContext('2d');
-
-                    const data = {
-                        labels: rawData.map(d => d.label),
-                        datasets: [{
-                            data: rawData.map(d => parseFloat(d.data) || 0),
-                            backgroundColor: rawData.map(d => d.backgroundColor)
-                        }]
-                    };
-
-                    approvedChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data,
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        font: {
-                                            size: 12
-                                        },
-                                        padding: 20 // <-- Increase space between chart and legend
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: ctx =>
-                                            `${ctx.label}: ₱ ${ctx.parsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    }
-                                },
-                                datalabels: {
-                                    anchor: 'end',
-                                    align: 'end',
-                                    offset: 6,
-                                    clip: false,
-                                    color: (context) => {
-                                        // Match label color with corresponding slice color
-                                        return context.chart.data.datasets[0].backgroundColor[context
-                                            .dataIndex];
-                                    },
+                pipelineChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
                                     font: {
-                                        weight: 'bold',
                                         size: 12
                                     },
-                                    formatter: value => `₱ ${(value / 1_000_000_000).toFixed(2)}B`
+                                    padding: 30
                                 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx =>
+                                        `${ctx.label}: ₱ ${ctx.parsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                }
+                            },
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'end',
+                                offset: 8,
+                                clip: false,
+                                color: (context) => {
+                                    // Match label color with corresponding slice color
+                                    return context.chart.data.datasets[0].backgroundColor[context
+                                        .dataIndex];
+                                },
+                                font: {
+                                    // weight: 'bold',
+                                    size: 14
+                                },
+                                formatter: value => value === 0 ? '' : `${(value / 1_000_000_000).toFixed(2)}`
                             }
-                        },
-                        plugins: [ChartDataLabels]
-                    });
-                }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
             }
         }
-    </script>
+    };
+
+    // Approved Pie Chart
+    window.ApprovedPieChart = function() {
+        return {
+            init() {
+                const rawData = @json($approvedPieChartData);
+
+                const canvas = document.getElementById('chart-cluster-approved');
+                if (!canvas) return;
+
+                // destroy previous chart
+                if (Chart.getChart(canvas)) {
+                    Chart.getChart(canvas).destroy();
+                }
+
+                const ctx = canvas.getContext('2d');
+
+                const data = {
+                    labels: rawData.map(d => d.label),
+                    datasets: [{
+                        data: rawData.map(d => parseFloat(d.data) || 0),
+                        backgroundColor: rawData.map(d => d.backgroundColor)
+                    }]
+                };
+
+                approvedChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    padding: 30
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx =>
+                                        `${ctx.label}: ₱ ${ctx.parsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                }
+                            },
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'end',
+                                offset: 8,
+                                clip: false,
+                                color: (context) => {
+                                    // Match label color with corresponding slice color
+                                    return context.chart.data.datasets[0].backgroundColor[context
+                                        .dataIndex];
+                                },
+                                font: {
+                                    // weight: 'bold',
+                                    size: 14
+                                },
+                                formatter: value => `${(value / 1_000_000_000).toFixed(2)}`
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+            }
+        }
+    }
+</script>
 @endscript
