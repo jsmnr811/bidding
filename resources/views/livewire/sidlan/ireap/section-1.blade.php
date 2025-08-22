@@ -103,8 +103,6 @@ new class extends Component {
             $approvedCostsPerCluster[$cluster] = $approvedCostsRaw[$cluster] ?? 0.0;
         }
 
-        // Prepare data structures including colors for charts (optional)
-        // For example, if you want to return array of arrays for chart datasets:
 
         $pipelineChartData = [];
         $approvedChartData = [];

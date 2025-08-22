@@ -17,31 +17,34 @@ class InvestmentRegistration extends Component
     use WithFileUploads;
 
     public $image;
-    public $firstname, $middlename, $lastname;
-    public $affiliation, $designation;
-    public $gender, $phone, $email;
-    public $vulnerability, $food_restriction;
-    public $region;
-    public $province;
-
+    public $firstname, $middlename, $lastname, $ext_name, $sex;
+    public $institution, $office, $designation, $region, $province;
+    public  $email, $contact_number;
+    public $food_restriction;
     public $regions = [];
     public $provinces = [];
 
     protected $rules = [
         'image'            => 'required|image|max:2048',
-        'firstname'        => 'required|min:2',
-        'middlename'       => 'nullable|min:2',
-        'lastname'         => 'required|min:2',
-        'affiliation'      => 'required|string',
+        'firstname'        => 'required|string|min:2',
+        'middlename'       => 'nullable|string|min:2',
+        'lastname'         => 'required|string|min:2',
+        'ext_name'         => 'nullable|string|max:10',
+        'sex'              => 'required|in:Male,Female',
+
+        'institution'      => 'required|string',
+        'office'           => 'required|string',
         'designation'      => 'required|string',
-        'gender'           => 'required|in:Male,Female,Other',
-        'phone'            => 'required|numeric|digits:11',
+
+        'region'           => 'required|exists:regions,id',
+        'province'         => 'required|exists:provinces,id',
+
         'email'            => 'required|email|unique:geomapping_users,email',
-        'region'           => 'required',
-        'province'         => 'required|string',
-        'vulnerability'    => 'required|string',
-        'food_restriction' => 'required|string',
+        'contact_number'   => 'required|numeric|digits:11',
+
+        'food_restriction' => 'nullable|string|max:255',
     ];
+
 
     public function mount()
     {
@@ -68,51 +71,56 @@ class InvestmentRegistration extends Component
         $loginCode = strtoupper(Str::random(8));
 
         GeomappingUser::create([
-            'name' => $this->firstname . ' ' . $this->middlename . ' ' . $this->lastname,
+            'image'            => $imagePath,
+            'name' => implode(' ', array_filter([$this->firstname, $this->middlename, $this->lastname, $this->ext_name])),
             'firstname'        => $this->firstname,
             'middlename'       => $this->middlename,
             'lastname'         => $this->lastname,
-            'affiliation'      => $this->affiliation,
+            'ext_name'         => $this->ext_name,
+            'sex'              => $this->sex,
+
+            'institution'      => $this->institution,
+            'office'           => $this->office,
             'designation'      => $this->designation,
-            'gender'           => $this->gender,
-            'phone'            => $this->phone,
+            'region_id'        => $this->region,
+            'province_id'      => $this->province,
+
             'email'            => $this->email,
-            'vulnerability'    => $this->vulnerability,
+            'contact_number'   => $this->contact_number,
+
             'food_restriction' => $this->food_restriction,
-            'region_id'           => $this->region,
-            'province_id'         => $this->province,
+
             'login_code'       => $loginCode,
-            'image'            => $imagePath,
         ]);
 
         session()->flash('message', "✅ Registration successful! Your login code is: {$loginCode}");
 
-        // return redirect()->to('/dashboard');
-        $mail = new PHPMailer(true);
+        // // return redirect()->to('/dashboard');
+        // $mail = new PHPMailer(true);
 
-        try {
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'prdponline.ggu@gmail.com'; // your Gmail
-            $mail->Password   = 'sidx daut wjse asas';       // app password
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = 587;
+        // try {
+        //     $mail->isSMTP();
+        //     $mail->Host       = 'smtp.gmail.com';
+        //     $mail->SMTPAuth   = true;
+        //     $mail->Username   = 'prdponline.ggu@gmail.com'; // your Gmail
+        //     $mail->Password   = 'sidx daut wjse asas';       // app password
+        //     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        //     $mail->Port       = 587;
 
-            $mail->setFrom('prdponline.ggu@gmail.com', 'PRDP Investment Forum');
-            $mail->addAddress($this->email, $this->firstname . ' ' . $this->lastname);
+        //     $mail->setFrom('prdponline.ggu@gmail.com', 'PRDP Investment Forum');
+        //     $mail->addAddress($this->email, $this->firstname . ' ' . $this->lastname);
 
-            $mail->isHTML(true);
-            $mail->Subject = 'PRDP Investment Forum Registration Confirmation';
-            $mail->Body    = "<p>Thank you for registering, {$this->firstname}!</p><p>Your login code is: <strong>{$loginCode}</strong></p>";
+        //     $mail->isHTML(true);
+        //     $mail->Subject = 'PRDP Investment Forum Registration Confirmation';
+        //     $mail->Body    = "<p>Thank you for registering, {$this->firstname}!</p><p>Your login code is: <strong>{$loginCode}</strong></p>";
 
-            // Attach image
-            $mail->addAttachment(public_path('storage/investmentforum2025/' . $filename), 'Photo.jpg');
+        //     // Attach image
+        //     $mail->addAttachment(public_path('storage/investmentforum2025/' . $filename), 'Photo.jpg');
 
-            $mail->send();
-        } catch (Exception $e) {
-            logger()->error("Email sending failed: {$mail->ErrorInfo}");
-        }
+        //     $mail->send();
+        // } catch (Exception $e) {
+        //     logger()->error("Email sending failed: {$mail->ErrorInfo}");
+        // }
 
         $this->reset();
         LivewireAlert::title('Success!')
@@ -130,18 +138,19 @@ class InvestmentRegistration extends Component
             'firstname',
             'middlename',
             'lastname',
-            'affiliation',
+            'ext_name',
+            'sex',
+            'institution',
+            'office',
             'designation',
-            'gender',
-            'phone',
-            'email',
             'region',
             'province',
-            'vulnerability',
+            'email',
+            'contact_number',
             'food_restriction',
         ]);
 
-        $this->provinces = collect(); // Optional: clear provinces if needed
+        $this->provinces = collect(); 
     }
 
     public function render()

@@ -12,15 +12,24 @@ return new class extends Migration
             $table->string('firstname')->nullable()->after('id');
             $table->string('middlename')->nullable()->after('firstname');
             $table->string('lastname')->nullable()->after('middlename');
+            $table->string('ext_name')->nullable()->after('lastname');
+            $table->enum('sex', ['Male', 'Female'])->nullable()->after('ext_name');
+
+            $table->string('institution')->nullable()->after('sex');
+           $table->string('office')->nullable()->after('institution');
+            $table->string('designation')->nullable()->after('office');
             $table->string('region_id')->nullable()->after('lastname');
             $table->string('province_id')->nullable()->after('region_id');
-            $table->string('affiliation')->nullable()->after('province_id');
-            $table->string('designation')->nullable()->after('affiliation');
-            $table->enum('gender', ['Male', 'Female', 'Other'])->nullable()->after('designation');
-            $table->string('phone')->nullable()->after('gender');
-            $table->string('email')->nullable()->unique()->after('phone');
-            $table->string('vulnerability')->nullable()->after('email');
-            $table->string('food_restriction')->nullable()->after('vulnerability');
+
+            $table->string('email')->nullable()->unique()->after('province_id');
+            $table->string('contact_number')->nullable()->after('email');
+
+            $table->string('food_restriction')->nullable()->after('contact_number');
+
+            $table->string('role')->nullable()->after('login_code');
+            $table->string('group_number')->nullable()->after('role');
+            $table->string('table_number')->nullable()->after('group_number');
+
             $table->string('image')->nullable()->after('food_restriction');
         });
     }

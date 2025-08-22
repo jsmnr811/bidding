@@ -9,23 +9,30 @@ class GeomappingUser extends Authenticatable
     protected $table = 'geomapping_users';
 
     protected $fillable = [
+        'image',
         'name',
-        'login_code',
-        'group',
-        'lat_long',
         'firstname',
         'middlename',
         'lastname',
+        'ext_name',
+        'gender',
+
+        'institution',
+        'office',
+        'designation',
         'region_id',
         'province_id',
-        'affiliation',
-        'designation',
-        'gender',
-        'phone',
+
         'email',
-        'vulnerability',
+        'contact_number',
+
         'food_restriction',
-        'image',
+
+        'login_code',
+        'group_number',
+        'table_number',
+        'lat_long',
+        'role'
     ];
 
     protected $hidden = [];

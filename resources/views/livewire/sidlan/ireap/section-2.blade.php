@@ -27,29 +27,44 @@ new class extends Component {
     private function initData()
     {
         $underBusinessPlanPreparation = $this->underBusinessPlanPreparation();
+        $forRPABApproval = $this->forRPABApproval();
+
         $dataSets['underBusinessPlanPreparation'] = [
             'title' => 'Under Business Plan Preparation',
             'subject_count' => $underBusinessPlanPreparation['count'],
             'beyond_timeline_count' => $underBusinessPlanPreparation['beyondTimelineCount'],
             'key' => 'underBusinessPlanPreparation',
             'average_difference_days' => $underBusinessPlanPreparation['average_difference_days'],
+            'bar_Label' => $underBusinessPlanPreparation['average_difference_days'] . ' days vs \n 204 days timeline',
+
 
         ];
         $dataSets['forRPABApproval'] = [
             'title' => 'Under Review /  For RPAB Approval',
-            'subject_count' => 0 + 11,
-            'beyond_timeline_count' => 12,
+            'subject_count' => $forRPABApproval['count'],
+            'beyond_timeline_count' => $forRPABApproval['beyondTimelineCount'],
             'key' => 'forRPABApproval',
+            'average_difference_days' => $forRPABApproval['average_difference_days'],
+            'bar_Label' => $forRPABApproval['average_difference_days'] . ' days vs \n 114 days timeline',
+
         ];
         $dataSets['rpabApproved'] = [
             'title' => 'RPAB Approved (For NOL 1)',
             'subject_count' => 13,
             'beyond_timeline_count' => 14,
             'key' => 'rpabApproved',
+            'extra_info' => 'Another custom text or value',
+
         ];
 
         $this->consolidatedTableData['underBusinessPlanPreparation']['subprojectItems'] = $underBusinessPlanPreparation['items'] ?? [];
         $this->consolidatedTableData['underBusinessPlanPreparation']['beyondTimelineItems'] = $underBusinessPlanPreparation['beyondTimeline'] ?? [];
+
+        $this->consolidatedTableData['forRPABApproval']['subprojectItems'] = $forRPABApproval['items'] ?? [];
+        $this->consolidatedTableData['forRPABApproval']['beyondTimelineItems'] = $forRPABApproval['beyondTimeline'] ?? [];
+
+        $this->consolidatedTableData['RPABApproved']['subprojectItems'] = $RPABApproved['items'] ?? [];
+        $this->consolidatedTableData['RPABApproved']['beyondTimelineItems'] = $RPABApproved['beyondTimeline'] ?? [];
         $this->dataSets = $dataSets;
 
         return $dataSets;
@@ -60,109 +75,313 @@ new class extends Component {
         $apiService = new SidlanAPIServices();
         $irZeroTwoData = $apiService->executeRequest(['dataset_id' => 'ir-01-002']);
         $zeroTwo = collect($irZeroTwoData);
-        $items = [];
 
-        if ($this->filterKey == 'All') {
-            $items = $zeroTwo->filter(
-                fn($item) =>
-                $item['stage'] === 'Pre-procurement' &&
-                    $item['specific_status'] === 'Subproject Confirmed' &&
-                    !empty($item['subproject_confirmed']) &&
-                    empty($item['business_plan_packaged'])
-            )->map(function ($item) {
-                return collect($item)->only([
-                    'cluster',
-                    'region',
-                    'province',
-                    'city_municipality',
-                    'proponent',
-                    'project_name',
-                    'subproject_confirmed',
-                    'project_type',
-                    'stage',
-                    'specific_status'
-                ]);
-            });
-        } elseif (in_array($this->filterKey, ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'])) {
-            $items = $zeroTwo->filter(
-                fn($item) =>
-                $item['stage'] === 'Pre-procurement' &&
-                    $item['specific_status'] === 'Subproject Confirmed' &&
-                    !empty($item['subproject_confirmed']) &&
-                    empty($item['business_plan_packaged']) &&
-                    $item['cluster'] === $this->filterKey
-            )->map(function ($item) {
-                return collect($item)->only([
-                    'cluster',
-                    'region',
-                    'province',
-                    'city_municipality',
-                    'proponent',
-                    'project_name',
-                    'subproject_confirmed',
-                    'project_type',
-                    'stage',
-                    'specific_status'
-                ]);
-            });
-        } else {
-            $items = $zeroTwo->filter(
-                fn($item) =>
-                $item['stage'] === 'Pre-procurement' &&
-                    $item['specific_status'] === 'Subproject Confirmed' &&
-                    !empty($item['subproject_confirmed']) &&
-                    empty($item['business_plan_packaged']) &&
-                    $item['region'] === $this->filterKey
-            )->map(function ($item) {
-                return collect($item)->only([
-                    'cluster',
-                    'region',
-                    'province',
-                    'city_municipality',
-                    'proponent',
-                    'project_name',
-                    'subproject_confirmed',
-                    'project_type',
-                    'stage',
-                    'specific_status'
-                ]);
-            });
-        }
+        // Apply filtering based on filterKey
+        $items = $zeroTwo->filter(function ($item) {
+            $matchesStage = $item['stage'] === 'Pre-procurement';
+            $isConfirmed = $item['specific_status'] === 'Subproject Confirmed';
+            $hasConfirmedDate = !empty($item['subproject_confirmed']);
+            $noBusinessPlan = empty($item['sp_rpab_approved']);
+
+            $baseCondition = $matchesStage && $isConfirmed && $hasConfirmedDate && $noBusinessPlan;
+
+            if ($this->filterKey === 'All') {
+                return $baseCondition;
+            } elseif (in_array($this->filterKey, ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'])) {
+                return $baseCondition && $item['cluster'] === $this->filterKey;
+            } else {
+                return $baseCondition && $item['region'] === $this->filterKey;
+            }
+        })->map(function ($item) {
+            // Determine cost based on priority
+            $cost = '-';
+            foreach (
+                [
+                    'cost_nol_1',
+                    'rpab_approved_cost',
+                    'estimated_project_cost',
+                    'cost_during_validation',
+                    'indicative_project_cost'
+                ] as $field
+            ) {
+                if (isset($item[$field]) && is_numeric($item[$field]) && (float)$item[$field] > 0) {
+                    $cost = '₱' . number_format((float) $item[$field], 2);
+                    break;
+                }
+            }
+
+            return collect($item)->only([
+                'cluster',
+                'region',
+                'province',
+                'city_municipality',
+                'proponent',
+                'project_name',
+                'subproject_confirmed',
+                'project_type',
+                'stage',
+                'specific_status'
+            ])->merge([
+                'cost' => $cost
+            ]);
+        });
 
         $now = now();
 
-        // Add date_difference to each item
+        // Add date_difference and reformat date
         $items = $items->map(function ($item) use ($now) {
             $confirmedDate = Carbon::parse($item['subproject_confirmed']);
-            $dateDiff = (int) $confirmedDate->diffInDays($now); // ensure integer
-
-            // Format the date as "Jan 1, 2000"
+            $dateDiff = $confirmedDate->diffInRealDays($now);
             $formattedDate = $confirmedDate->format('M j, Y');
 
             return $item->merge([
                 'date_difference' => $dateDiff,
                 'subproject_confirmed' => $formattedDate,
+                'dataset_key' => 'underBusinessPlanPreparation'
             ]);
         });
 
-
         $beyondTimeline = $items->filter(function ($item) use ($now) {
             $confirmedDate = Carbon::parse($item['subproject_confirmed']);
-            return $confirmedDate->lt($now) && $confirmedDate->diffInDays($now) > 204;
+            return $confirmedDate->lt($now) && $confirmedDate->diffInRealDays($now) > 204;
         });
 
-        $averageDifferenceDays = $beyondTimeline->avg('date_difference');
-        $averageDifferenceDays = $averageDifferenceDays ? round($averageDifferenceDays) : 0;
+        $averageDifferenceDays = $beyondTimeline->avg('date_difference') ?? 0;
+        $averageDifferenceDays = round($averageDifferenceDays);
 
         return [
             'items' => $items,
             'count' => $items->count(),
             'beyondTimeline' => $beyondTimeline,
             'beyondTimelineCount' => $beyondTimeline->count(),
-            'average_difference_days' => $averageDifferenceDays,
-
+            'average_difference_days' => $averageDifferenceDays
         ];
     }
+
+    private function forRPABApproval(): array
+    {
+        $apiService = new SidlanAPIServices();
+        $irZeroTwoData = $apiService->executeRequest(['dataset_id' => 'ir-01-002']);
+        $zeroTwo = collect($irZeroTwoData);
+
+        // Apply filtering based on filterKey
+        $items = $zeroTwo->filter(function ($item) {
+            $matchesStage = $item['stage'] === 'Pre-procurement';
+            $isForRPABApproval = in_array($item['specific_status'], [
+                'RPCO Technical Review of Business Plan conducted',
+                'Business Plan Package for RPCO technical review submitted'
+            ], true);
+            $priorityDates = [
+                'ima_signed_notarized',
+                'sp_rpab_approved',
+                'jtr_conducted',
+                'rpco_technical_review_conducted',
+                'business_plan_packaged',
+            ];
+
+            $rpabApprovalDate = null;
+
+            foreach ($priorityDates as $field) {
+                if (!empty($item[$field])) {
+                    $rpabApprovalDate = $item[$field];
+                    break;
+                }
+            }
+
+            $noNol1Issued = empty($item['nol1_issued']);
+
+            $baseCondition = $matchesStage && $isForRPABApproval && $rpabApprovalDate && $noNol1Issued;
+
+            if ($this->filterKey === 'All') {
+                return $baseCondition;
+            } elseif (in_array($this->filterKey, ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'])) {
+                return $baseCondition && $item['cluster'] === $this->filterKey;
+            } else {
+                return $baseCondition && $item['region'] === $this->filterKey;
+            }
+        })->map(function ($item) {
+            // Determine cost based on priority
+            $cost = '-';
+            foreach (
+                [
+                    'cost_nol_1',
+                    'rpab_approved_cost',
+                    'estimated_project_cost',
+                    'cost_during_validation',
+                    'indicative_project_cost'
+                ] as $field
+            ) {
+                if (isset($item[$field]) && is_numeric($item[$field]) && (float)$item[$field] > 0) {
+                    $cost = '₱' . number_format((float) $item[$field], 2);
+                    break;
+                }
+            }
+
+            // Pick RPAB Approval Date from priority
+            $priorityDates = [
+                'ima_signed_notarized',
+                'sp_rpab_approved',
+                'jtr_conducted',
+                'rpco_technical_review_conducted',
+                'business_plan_packaged',
+            ];
+
+            $rpabApprovalDate = null;
+
+            foreach ($priorityDates as $field) {
+                if (!empty($item[$field])) {
+                    $rpabApprovalDate = $item[$field];
+                    break;
+                }
+            }
+
+            return collect($item)->only([
+                'cluster',
+                'region',
+                'province',
+                'city_municipality',
+                'proponent',
+                'project_name',
+                'ima_signed_notarized',
+                'sp_rpab_approved',
+                'jtr_conducted',
+                'rpco_technical_review_conducted',
+                'business_plan_packaged',
+                'project_type',
+                'stage',
+                'specific_status'
+            ])->merge([
+                'cost' => $cost,
+                'subproject_confirmed' => $rpabApprovalDate,
+                'rpabApprovalDate' => $rpabApprovalDate,
+                'dataset_key' => 'forRPABApproval'
+            ]);
+        });
+
+
+        $now = now();
+
+        // Add date_difference and reformat date
+        $items = $items->map(function ($item) use ($now) {
+            $businessPlanPackagedDate = Carbon::parse($item['rpabApprovalDate']);
+            $dateDiff = $businessPlanPackagedDate->diffInDays($now);
+            $formattedDate = $businessPlanPackagedDate->format('M j, Y');
+
+            return $item->merge([
+                'date_difference' => $dateDiff,
+                'rpabApprovalDate' => $formattedDate,
+                'dataset_key' => 'forRPABApproval'
+            ]);
+        });
+
+        $beyondTimeline = $items->filter(function ($item) use ($now) {
+            $businessPlanPackagedDate = Carbon::parse($item['rpabApprovalDate']);
+            return $businessPlanPackagedDate->lt($now) && $businessPlanPackagedDate->diffInDays($now) > 114;
+        });
+
+        $averageDifferenceDays = $beyondTimeline->avg('date_difference') ?? 0;
+        $averageDifferenceDays = round($averageDifferenceDays);
+
+        return [
+            'items' => $items,
+            'count' => $items->count(),
+            'beyondTimeline' => $beyondTimeline,
+            'beyondTimelineCount' => $beyondTimeline->count(),
+            'average_difference_days' => $averageDifferenceDays
+        ];
+    }
+
+    private function RPABApproved(): array
+    {
+        $apiService = new SidlanAPIServices();
+        $irZeroTwoData = $apiService->executeRequest(['dataset_id' => 'ir-01-002']);
+        $zeroTwo = collect($irZeroTwoData);
+
+        $items = $zeroTwo->filter(function ($item) {
+            $matchesStage = $item['stage'] === 'Pre-procurement';
+            $isRPABApproved = in_array($item['specific_status'], [
+                'Joint Technical Review (JTR) conducted',
+                'SP approved by RPAB',
+                'Signing of the IMA',
+                'Subproject Issued with No Objection Letter 1'
+            ], true);;
+            $hasNOL1 = !empty($item['nol1_issued']);
+
+            $baseCondition = $matchesStage && $isRPABApproved && $hasNOL1;
+
+            if ($this->filterKey === 'All') {
+                return $baseCondition;
+            } elseif (in_array($this->filterKey, ['Luzon A', 'Luzon B', 'Visayas', 'Mindanao'])) {
+                return $baseCondition && $item['cluster'] === $this->filterKey;
+            } else {
+                return $baseCondition && $item['region'] === $this->filterKey;
+            }
+        })->map(function ($item) {
+            // Determine cost based on priority
+            $cost = '-';
+            foreach (
+                [
+                    'cost_nol_1',
+                    'rpab_approved_cost',
+                    'estimated_project_cost',
+                    'cost_during_validation',
+                    'indicative_project_cost'
+                ] as $field
+            ) {
+                if (isset($item[$field]) && is_numeric($item[$field]) && (float)$item[$field] > 0) {
+                    $cost = '₱' . number_format((float) $item[$field], 2);
+                    break;
+                }
+            }
+
+            return collect($item)->only([
+                'cluster',
+                'region',
+                'province',
+                'city_municipality',
+                'proponent',
+                'project_name',
+                'nol1_issued',
+                'project_type',
+                'stage',
+                'specific_status'
+            ])->merge([
+                'cost' => $cost
+            ]);
+        });
+
+        $now = now();
+
+        // Add date_difference and reformat date
+        $items = $items->map(function ($item) use ($now) {
+            $nol1Date = Carbon::parse($item['nol1_issued']);
+            $dateDiff = $nol1Date->diffInRealDays($now);
+            $formattedDate = $nol1Date->format('M j, Y');
+
+            return $item->merge([
+                'date_difference' => $dateDiff,
+                'nol1_issued' => $formattedDate,
+                'dataset_key' => 'underBusinessPlanPreparation'
+            ]);
+        });
+
+        $beyondTimeline = $items->filter(function ($item) use ($now) {
+            $nol1Date = Carbon::parse($item['nol1_issued']);
+            return $nol1Date->lt($now) && $nol1Date->diffInRealDays($now) > 120;
+        });
+
+        $averageDifferenceDays = $beyondTimeline->avg('date_difference') ?? 0;
+        $averageDifferenceDays = round($averageDifferenceDays);
+
+        return [
+            'items' => $items,
+            'count' => $items->count(),
+            'beyondTimeline' => $beyondTimeline,
+            'beyondTimelineCount' => $beyondTimeline->count(),
+            'average_difference_days' => $averageDifferenceDays
+        ];
+    }
+
 
 
     public function updatedFilterKey(): void
@@ -303,11 +522,27 @@ new class extends Component {
                                     <td style="white-space: nowrap;">{{ $data['city_municipality'] }}</td>
                                     <td style="white-space: nowrap;">{{ $data['proponent'] }}</td>
                                     <td style="white-space: nowrap;">{{ $data['project_name'] }}</td>
-                                    <td style="white-space: nowrap;">{{ $data['project_name'] }}</td>
-                                    <td style="white-space: nowrap;"></td>
+                                    <td style="white-space: nowrap;">{{ $data['project_type'] }}</td>
+                                    <td style="white-space: nowrap;">{{ $data['cost'] }}</td>
                                     <td style="white-space: nowrap;">{{ $data['stage'] }}</td>
                                     <td style="white-space: nowrap;">{{ $data['specific_status'] }}</td>
-                                    <td style="white-space: nowrap;">{{ $data['date_difference'] . ' days from Date of confirmation (' . $data['subproject_confirmed'] . ')' }}</td>
+                                    <td style="white-space: nowrap;">
+                                        {{ round($data['date_difference']) }} days from
+
+                                        @php
+                                        $formattedDate = \Carbon\Carbon::parse($data['subproject_confirmed'])->format('M j, Y');
+                                        @endphp
+
+                                        @if($data['dataset_key'] === 'underBusinessPlanPreparation')
+                                        Date of confirmation ({{ $formattedDate }})
+                                        @elseif($data['dataset_key'] === 'forRPABApproval')
+                                        FS / DED Preparation ({{ $formattedDate }})
+                                        @elseif($data['dataset_key'] === 'rpabApproved')
+                                        NOL Date ({{ $formattedDate }})
+                                        @else
+                                        Date of confirmation ({{ $formattedDate }})
+                                        @endif
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -437,15 +672,22 @@ new class extends Component {
                         textAlign: 'center',
                         formatter: function(value, context) {
                             if (context.datasetIndex === 1 && value > 0) {
+                                const datasetIndex = context.dataIndex; // index of the bar clicked
+                                const key = groupKeys[datasetIndex]; // dataset key
+                                const data = chartData[key]; // dataset data
+
+                                // Use your custom label, fallback to default
+                                const label = (data?.bar_Label || '').replace(/\\n/g, '\n') || `${value} items`;
+
                                 return [
                                     `${value}`,
-                                    `(${averageDiff} days vs`,
-                                    `204 days timeline)`
+                                    label
                                 ];
-
                             }
                             return value > 0 ? `${value}` : '';
                         }
+
+
                     }
                 },
                 onClick: (evt, elements) => {
