@@ -25,6 +25,11 @@ new class extends Component {
 
         $user = GeomappingUser::where('login_code', $this->accessCode)->first();
 
+        if ($user->is_blocked === 1) {
+            $this->addError('accessCode', 'User is blocked.Please contact system admin.');
+            return;
+        }
+
         if ($user) {
             Auth::guard('geomapping')->login($user);
             return redirect()->intended(route('geomapping.iplan.landing'));
@@ -32,6 +37,7 @@ new class extends Component {
 
         // Instead of returning back(), add an error to the component state
         $this->addError('accessCode', 'Invalid login code.');
+        return;
     }
 };
 ?>

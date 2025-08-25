@@ -59,6 +59,8 @@ class GeomappingUsersDataTable extends DataTable
             })->filterColumn('gropup_info', function ($query, $keyword) {
                 $query->where('group_number', 'like', "%$keyword%")->orWhere('table_number', 'like', "%$keyword%");
             })
+            ->addColumn('status', fn($geomappingUser) => $geomappingUser->is_blocked ? new HtmlString('<span class="badge bg-danger">Blocked</span>') : new HtmlString('<span class="badge bg-success">Active</span>'))
+
             ->setRowId('id');
     }
 
@@ -69,8 +71,8 @@ class GeomappingUsersDataTable extends DataTable
         $query = $model->newQuery();
 
         if (request()->filled('region_select')) {
-            if(request()->get('region_select') != 'all') {
-            $query->where('region_id', request()->get('region_select'));
+            if (strtolower(request()->get('region_select')) != 'all') {
+                $query->where('region_id', request()->get('region_select'));
             }
         }
 
@@ -118,19 +120,66 @@ class GeomappingUsersDataTable extends DataTable
             Column::make('name')->searchable(true)->width('30%'),
             Column::make('region')->title('Office')->searchable(true)->width('20%'),
             Column::make('contact_info')->title('Contact Info')->searchable(true)->width('20%'),
-            Column::make('gropup_info')->title('Group Info')->searchable(true)->width('20%'),
+            Column::make('gropup_info')->title('Group Info')->searchable(true)->width('15%'),
+            Column::make('status')->title('Status')->searchable(true)->width('5%'),
             // Column::make('group_numnber')->searchable(true),
             // Column::make('registration')->title('Registered')->searchable(true),
             Column::computed('actions')->exportable(false)->printable(false)->width('8%')->addClass('text-center'),
         ];
     }
 
-
     public function actions(GeomappingUser $geomappingUser)
     {
-        $html = "<button class='btn btn-primary' onclick='Livewire.dispatch(\"editGeomappingUser\", {user:$geomappingUser->id})'>Edit</button>";
+        $isBlocked = $geomappingUser->is_blocked;
+        $userId = $geomappingUser->id;
+
+        // Block / Unblock link
+        $blockAction = $isBlocked
+            ? '<a class="dropdown-item text-danger" href="#" onclick="Livewire.dispatch(\'confirmUpdateBlockStatus\', { user: ' . $userId . ' })">Unblock</a>'
+            : '<a class="dropdown-item text-danger" href="#" onclick="Livewire.dispatch(\'confirmUpdateBlockStatus\', { user: ' . $userId . ' })">Block</a>';
+
+        // Mail ID link only if group_number & table_number exist
+        $mailIdAction = '';
+        if ($geomappingUser->group_number !== null && $geomappingUser->table_number !== null) {
+            $mailIdAction = '
+            <li>
+                <a class="dropdown-item" href="#" onclick="Livewire.dispatch(\'confirmSendGeomappingUserId\', { user: ' . $userId . ' })">
+                    Mail ID
+                </a>
+            </li>';
+        }
+
+        // Build full dropdown HTML
+        $html = <<<HTML
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="actionsMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+            Actions
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="actionsMenuButton">
+            <!-- Edit Profile -->
+            <li>
+                <a class="dropdown-item" href="#" onclick="Livewire.dispatch('editGeomappingUser', { user: $userId })">
+                    Edit Profile
+                </a>
+            </li>
+            $mailIdAction
+            <li>
+                <a class="dropdown-item" href="#" onclick="Livewire.dispatch('assignGeomappingUser', { user: $userId })">
+                    Assign
+                </a>
+            </li>
+            <!-- Block / Unblock -->
+            <li>
+                $blockAction
+            </li>
+        </ul>
+    </div>
+    HTML;
+
         return new HtmlString($html);
     }
+
+
 
 
     /**

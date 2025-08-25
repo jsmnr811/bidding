@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Geomapping\Iplan;
 
-use App\Models\GeomappingUser;
 use App\Models\Region;
-use App\Models\Province;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
-use Livewire\WithFileUploads;
+use App\Models\Province;
 use Illuminate\Support\Str;
-use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithFileUploads;
+use App\Models\GeomappingUser;
+use Livewire\Attributes\Layout;
 use PHPMailer\PHPMailer\PHPMailer;
+use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
+#[Layout('components.layouts.investmentForum2025.app')]
 class InvestmentRegistration extends Component
 {
     use WithFileUploads;
@@ -23,6 +25,7 @@ class InvestmentRegistration extends Component
     public $food_restriction;
     public $regions = [];
     public $provinces = [];
+
 
     protected $rules = [
         'image'            => 'required|image|max:2048',
@@ -132,11 +135,5 @@ class InvestmentRegistration extends Component
             ->show();
     }
 
-    public function render()
-    {
-        return view('livewire.geomapping.iplan.investment-registration', [
-            'regions' => $this->regions,
-            'provinces' => $this->provinces,
-        ])->layout('components.layouts.investmentForum2025.app');
-    }
+
 }

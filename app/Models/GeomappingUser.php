@@ -21,7 +21,7 @@ class GeomappingUser extends Authenticatable
         'middlename',
         'lastname',
         'ext_name',
-        'gender',
+        'sex',
 
         'institution',
         'office',
@@ -38,6 +38,7 @@ class GeomappingUser extends Authenticatable
         'group_number',
         'table_number',
         'lat_long',
+        'is_blocked',
         'role'
     ];
 
@@ -47,11 +48,11 @@ class GeomappingUser extends Authenticatable
 
     public function region()
     {
-        return $this->belongsTo(Region::class);
+        return $this->belongsTo(Region::class, 'region_id', 'code');
     }
 
     public function province()
     {
-        return $this->belongsTo(Province::class);
+        return $this->belongsTo(Province::class, 'province_id', 'code');
     }
 }

@@ -16,20 +16,26 @@ class RedirectIfAuthenticated
      * @param  string|null  ...$guards
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    public function handle(Request $request, Closure $next, ...$guards)
-    {
-        $guards = empty($guards) ? [null] : $guards;
+  public function handle(Request $request, Closure $next, ...$guards)
+{
+    $guards = empty($guards) ? [null] : $guards;
+    foreach ($guards as $guard) {
+        if (Auth::guard($guard)->check()) {
+            if ($guard === 'geomapping') {
+                $user = Auth::guard('geomapping')->user();
 
-        foreach ($guards as $guard) {
-            if (Auth::guard($guard)->check()) {
-                if ($guard === 'geomapping') {
-                    return redirect()->route('geomapping.iplan.landing');
+                if ((int) $user->role === 1) {
+                    return redirect()->route('investment.user-list');
                 }
 
-                return redirect('/home');
+                return redirect()->route('geomapping.iplan.landing');
             }
-        }
 
-        return $next($request);
+            return redirect('/home');
+        }
     }
+
+    return $next($request);
+}
+
 }

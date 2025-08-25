@@ -36,7 +36,7 @@
     $forum_link = 'https://prdp-online.com/';
     @endphp
     <div class="content">
-        <h2>REGISTRATION CONFIRMATION EMAIL PROMPT</h2>
+        <h2>REGISTRATION CONFIRMATION EMAIL</h2>
 
         <p>Dear {{ $user->firstname }} {{ $user->lastname }},</p>
 
