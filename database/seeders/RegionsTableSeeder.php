@@ -14,12 +14,12 @@ class RegionsTableSeeder extends Seeder
      */
     public function run()
     {
-        
+
 
         \DB::table('regions')->delete();
-        
+
         \DB::table('regions')->insert(array (
-            0 => 
+            0 =>
             array (
                 'id' => 1,
                 'name' => 'REGION I - ILOCOS REGION',
@@ -30,7 +30,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            1 => 
+            1 =>
             array (
                 'id' => 2,
                 'name' => 'REGION II - CAGAYAN VALLEY',
@@ -41,7 +41,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            2 => 
+            2 =>
             array (
                 'id' => 3,
                 'name' => 'REGION III - CENTRAL LUZON',
@@ -52,7 +52,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            3 => 
+            3 =>
             array (
                 'id' => 5,
                 'name' => 'REGION V - BICOL REGION',
@@ -63,7 +63,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            4 => 
+            4 =>
             array (
                 'id' => 6,
                 'name' => 'REGION VI - WESTERN VISAYAS',
@@ -74,7 +74,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            5 => 
+            5 =>
             array (
                 'id' => 7,
                 'name' => 'REGION VII - CENTRAL VISAYAS',
@@ -85,7 +85,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            6 => 
+            6 =>
             array (
                 'id' => 8,
                 'name' => 'REGION VIII - EASTERN VISAYAS',
@@ -96,7 +96,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            7 => 
+            7 =>
             array (
                 'id' => 9,
                 'name' => 'REGION IX - ZAMBOANGA PENINSULA',
@@ -107,7 +107,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            8 => 
+            8 =>
             array (
                 'id' => 10,
                 'name' => 'REGION X - NORTHERN MINDANAO',
@@ -118,7 +118,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            9 => 
+            9 =>
             array (
                 'id' => 11,
                 'name' => 'REGION XI - DAVAO REGION',
@@ -129,7 +129,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            10 => 
+            10 =>
             array (
                 'id' => 12,
                 'name' => 'REGION XII - SOCCSSARGEN',
@@ -140,7 +140,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            11 => 
+            11 =>
             array (
                 'id' => 13,
                 'name' => 'REGION XIII - CARAGA',
@@ -151,7 +151,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            12 => 
+            12 =>
             array (
                 'id' => 14,
                 'name' => 'BANGSAMORO AUTONOMOUS REGION IN MUSLIM MINDANAO',
@@ -162,7 +162,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-07-02 09:36:16',
             ),
-            13 => 
+            13 =>
             array (
                 'id' => 15,
                 'name' => 'CORDILLERA ADMINISTRATIVE REGION',
@@ -173,7 +173,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            14 => 
+            14 =>
             array (
                 'id' => 16,
                 'name' => 'NATIONAL CAPITAL REGION',
@@ -184,7 +184,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            15 => 
+            15 =>
             array (
                 'id' => 17,
                 'name' => 'REGION IV-A - CALABARZON',
@@ -195,7 +195,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            16 => 
+            16 =>
             array (
                 'id' => 18,
                 'name' => 'REGION IV-B- MIMAROPA',
@@ -206,7 +206,7 @@ class RegionsTableSeeder extends Seeder
                 'created_at' => '2025-06-30 08:51:22',
                 'updated_at' => '2025-06-30 08:51:22',
             ),
-            17 => 
+            17 =>
             array (
                 'id' => 19,
                 'name' => 'NEGROS ISLAND REGION',
@@ -218,7 +218,7 @@ class RegionsTableSeeder extends Seeder
                 'updated_at' => '2025-07-02 09:36:16',
             ),
         ));
-        
-        
+
+
     }
 }
