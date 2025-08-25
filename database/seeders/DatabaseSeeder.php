@@ -17,5 +17,7 @@ class DatabaseSeeder extends Seeder
             FakerUserSeeder::class,
             CommoditiesSeeder::class
         ]);
+        $this->call(RegionsTableSeeder::class);
+        $this->call(ProvincesTableSeeder::class);
     }
 }

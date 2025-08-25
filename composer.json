@@ -7,14 +7,19 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "developerawam/livewire-datatable": "^1.0",
         "jantinnerezo/livewire-alert": "^4.0",
         "laravel/framework": "^12.0",
         "laravel/telescope": "^5.7",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.4",
         "livewire/volt": "^1.7.0",
+        "orangehill/iseed": "^3.1",
         "phpmailer/phpmailer": "^6.10",
-        "spatie/laravel-permission": "^6.17"
+        "simplesoftwareio/simple-qrcode": "^4.2",
+        "spatie/browsershot": "^5.0",
+        "spatie/laravel-permission": "^6.17",
+        "yajra/laravel-datatables": "12.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.15",

@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Notifications\Notifiable;
+use App\Observers\GeomappingUserObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+#[ObservedBy([GeomappingUserObserver::class])]
 class GeomappingUser extends Authenticatable
 {
+
+    use Notifiable;
     protected $table = 'geomapping_users';
 
     protected $fillable = [
@@ -15,7 +21,7 @@ class GeomappingUser extends Authenticatable
         'middlename',
         'lastname',
         'ext_name',
-        'gender',
+        'sex',
 
         'institution',
         'office',
@@ -32,10 +38,21 @@ class GeomappingUser extends Authenticatable
         'group_number',
         'table_number',
         'lat_long',
+        'is_blocked',
         'role'
     ];
 
     protected $hidden = [];
 
     public $timestamps = true;
+
+    public function region()
+    {
+        return $this->belongsTo(Region::class, 'region_id', 'code');
+    }
+
+    public function province()
+    {
+        return $this->belongsTo(Province::class, 'province_id', 'code');
+    }
 }

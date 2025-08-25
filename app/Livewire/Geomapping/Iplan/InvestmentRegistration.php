@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Geomapping\Iplan;
 
-use App\Models\GeomappingUser;
 use App\Models\Region;
-use App\Models\Province;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
-use Livewire\WithFileUploads;
+use App\Models\Province;
 use Illuminate\Support\Str;
-use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Livewire\WithFileUploads;
+use App\Models\GeomappingUser;
+use Livewire\Attributes\Layout;
 use PHPMailer\PHPMailer\PHPMailer;
+use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
+#[Layout('components.layouts.investmentForum2025.app')]
 class InvestmentRegistration extends Component
 {
     use WithFileUploads;
@@ -23,6 +25,7 @@ class InvestmentRegistration extends Component
     public $food_restriction;
     public $regions = [];
     public $provinces = [];
+
 
     protected $rules = [
         'image'            => 'required|image|max:2048',
@@ -54,7 +57,7 @@ class InvestmentRegistration extends Component
 
     public function updatedRegion($value)
     {
-        $provs = Province::where('REGION_ID', $value)->orderBy('PROVINCE')->get();
+        $provs = Province::where('region_code', $value)->orderBy('name')->get();
         $this->provinces = $provs;
         $this->province = null;
     }
@@ -122,7 +125,8 @@ class InvestmentRegistration extends Component
         //     logger()->error("Email sending failed: {$mail->ErrorInfo}");
         // }
 
-        $this->reset();
+                $this->resetExcept('regions');
+
         LivewireAlert::title('Success!')
             ->text('You have been successfully registered.')
             ->success()
@@ -131,33 +135,5 @@ class InvestmentRegistration extends Component
             ->show();
     }
 
-    public function resetForm()
-    {
-        $this->reset([
-            'image',
-            'firstname',
-            'middlename',
-            'lastname',
-            'ext_name',
-            'sex',
-            'institution',
-            'office',
-            'designation',
-            'region',
-            'province',
-            'email',
-            'contact_number',
-            'food_restriction',
-        ]);
 
-        $this->provinces = collect(); 
-    }
-
-    public function render()
-    {
-        return view('livewire.geomapping.iplan.investment-registration', [
-            'regions' => $this->regions,
-            'provinces' => $this->provinces,
-        ])->layout('components.layouts.investmentForum2025.app');
-    }
 }

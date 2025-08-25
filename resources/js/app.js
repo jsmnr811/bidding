@@ -1,6 +1,10 @@
 import './bootstrap';
+import 'laravel-datatables-vite';
+
 import Swal from 'sweetalert2'
 import 'flowbite';
+
+
 
 window.Swal = Swal
 

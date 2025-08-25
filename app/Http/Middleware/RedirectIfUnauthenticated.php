@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -19,16 +20,18 @@ class RedirectIfUnAuthenticated
     {
         $guards = empty($guards) ? [null] : $guards;
 
-        // New: Check if user is NOT authenticated on guarded routes that require login
         foreach ($guards as $guard) {
             if (!Auth::guard($guard)->check()) {
-                // If user is not authenticated and trying to access protected pages,
-                // redirect them to the appropriate login route:
-                if ($guard === 'geomapping') {
-                    return redirect()->route('geomapping.iplan.login');
+                // Redirect unauthenticated users based on the guard
+                switch ($guard) {
+                    case 'geomapping':
+                        return redirect()->route('geomapping.iplan.login');
+                    case null:
+                    case 'web':
+                        return redirect()->route('login'); // uses named route if available
+                    default:
+                        return redirect('/login');
                 }
-
-                return redirect('/login');
             }
         }
 

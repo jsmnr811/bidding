@@ -7,4 +7,6 @@ return [
     App\Providers\VoltServiceProvider::class,
     Barryvdh\Debugbar\ServiceProvider::class,
     Spatie\Permission\PermissionServiceProvider::class,
+        Yajra\DataTables\DataTablesServiceProvider::class,
+
 ];
